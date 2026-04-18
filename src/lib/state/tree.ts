@@ -1,8 +1,9 @@
 import { writable, derived, get } from 'svelte/store';
 import type { WbsNode } from '../types';
-import { mkNode, overallProgress, rootWeightSum, rootWeightedSum } from '../utils/wbs';
+import { mkNode, overallProgress, rootWeightSum, rootWeightedSum, findParentList as _findParentList } from '../utils/wbs';
 import { persistStore } from './persistence';
 import { logChange } from './changelog';
+import { flashWarn } from './ui';
 
 export const tree = writable<WbsNode[]>([]);
 persistStore(tree, 'wbs_tree');
@@ -61,6 +62,38 @@ export function setField<K extends keyof WbsNode>(id: number, field: K, value: W
     const copy = structuredClone($t);
     const n = findNode(copy, id);
     if (n) n[field] = value;
+    return copy;
+  });
+  // Log selected structured changes (not every keystroke)
+  if (field === 'done' || field === 'rag' || field === 'priority' || field === 'resp') {
+    const n = findNode(get(tree), id);
+    if (n) {
+      const labels: Record<string, string> = {
+        done: 'Ukończenie',
+        rag: 'RAG',
+        priority: 'Priorytet',
+        resp: 'Odpowiedzialny'
+      };
+      logChange('edit', `[${n._code ?? ''}] ${String(n.name || '').slice(0, 40)}: ${labels[field as string]} → ${String(value).slice(0, 40)}`);
+    }
+  }
+}
+
+/** Set weight with sibling-sum validation; caps at remaining capacity */
+export function setWeight(id: number, val: number): void {
+  tree.update(($t) => {
+    const copy = structuredClone($t);
+    const siblings = _findParentList(copy, id) ?? copy;
+    const n = siblings.find((s) => s.id === id);
+    if (!n) return $t;
+    let newW = isFinite(val) ? val : 0;
+    const siblingsSum = siblings.filter((s) => s.id !== id).reduce((a, s) => a + (s.weight || 0), 0);
+    if (siblingsSum + newW > 100.05) {
+      const capped = Math.max(0, Math.round((100 - siblingsSum) * 10) / 10);
+      flashWarn(`⚠ Suma wag przekroczyłaby 100% — ograniczono do ${capped.toFixed(1)}%`, 'bad');
+      newW = capped;
+    }
+    n.weight = newW;
     return copy;
   });
 }

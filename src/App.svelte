@@ -11,6 +11,8 @@
   import TreeView from './views/TreeView.svelte';
   import WaterfallView from './views/WaterfallView.svelte';
   import GanttView from './views/GanttView.svelte';
+  import WbsEditorView from './views/WbsEditorView.svelte';
+  import TeamView from './views/TeamView.svelte';
   import StubView from './views/StubView.svelte';
 </script>
 
@@ -19,7 +21,9 @@
   <Toolbar />
   <TabBar />
 
-  {#if $activeTab === 'dash'}
+  {#if $activeTab === 'table'}
+    <WbsEditorView />
+  {:else if $activeTab === 'dash'}
     <DashboardView />
   {:else if $activeTab === 'rank'}
     <RankingView />
@@ -33,10 +37,8 @@
     <WaterfallView />
   {:else if $activeTab === 'gantt'}
     <GanttView />
-  {:else if $activeTab === 'table'}
-    <StubView name="Edytor WBS" description="Tabela hierarchiczna z zadaniami, wagami, terminami. Najbardziej złożony widok — migracja w następnym etapie." />
   {:else if $activeTab === 'team'}
-    <StubView name="Widok zespołu" description="Karty pracowników z ich zadaniami i godzinami. Wymaga modali Harmonogram/Dokumenty." />
+    <TeamView />
   {:else if $activeTab === 'report'}
     <StubView name="Raport" description="Generowanie raportu PDF z podsumowaniem projektu." />
   {:else if $activeTab === 'wlreport'}

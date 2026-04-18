@@ -145,3 +145,39 @@ export function barColor(pct: number): string {
   if (pct >= 25) return '#ED7D31';
   return '#C65911';
 }
+
+/** Depth-based visual config — darker/bigger for top-level, lighter/smaller deeper */
+const BG = ['#B8D4EC', '#D5E8F7', '#E8F3FC', '#F3F9FE', '#F8FCFF', '#FCFEFF'];
+const IND = [0, 14, 26, 38, 50, 62];
+const FS  = ['14px', '13px', '12px', '12px', '12px', '11px'];
+const FW  = ['700', '700', '600', '400', '400', '400'];
+const FC  = ['#0d2a4a', '#1a3a6a', '#1e4478', '#333', '#444', '#555'];
+
+export function depthCfg(depth: number): { bg: string; ind: number; fs: string; fw: string; fc: string } {
+  const i = Math.min(depth, BG.length - 1);
+  return { bg: BG[i], ind: IND[i], fs: FS[i], fw: FW[i], fc: FC[i] };
+}
+
+export function depthOf(code: string | undefined): number {
+  return ((code || '').match(/\./g) || []).length;
+}
+
+/** Find the parent list (siblings) for a given node id */
+export function findParentList(list: WbsNode[], id: number): WbsNode[] | null {
+  for (const n of list) {
+    if (n.id === id) return list;
+    const f = findParentList(n.children, id);
+    if (f) return f;
+  }
+  return null;
+}
+
+/** Find a node by id (depth-first) */
+export function findNodeById(list: WbsNode[], id: number): WbsNode | null {
+  for (const n of list) {
+    if (n.id === id) return n;
+    const c = findNodeById(n.children, id);
+    if (c) return c;
+  }
+  return null;
+}
