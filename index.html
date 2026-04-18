@@ -230,7 +230,7 @@ table.risk tr:hover td{background:#e8f3fb}
 .proj-hdr-meta{font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap}
 /* ── col toggle ── */
 .col-panel{background:#fff;border:1px solid #c5d4e8;border-top:none;overflow:hidden;transition:max-height .3s ease}
-.col-panel.open{max-height:80px}.col-panel.shut{max-height:0;border-bottom:none}
+.col-panel.open{max-height:260px}.col-panel.shut{max-height:0;border-bottom:none}
 .col-panel-inner{padding:8px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .col-panel-inner label{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#1a3a6a;cursor:pointer;padding:3px 8px;border:1px solid #c5d4e8;border-radius:5px;background:#f4f8fc;user-select:none}
 .col-panel-inner label:hover{border-color:#2E75B6;background:#e8f0fb}
@@ -835,6 +835,60 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
   #ord-body > div:first-child { flex-direction: column; align-items: stretch !important; gap: 8px; }
   #ord-body > div:first-child > input { width: 100% !important; min-height: 42px; padding: 10px 12px !important; }
   #ord-body > div:first-child > button { width: 100% !important; min-height: 44px; padding: 12px 16px !important; }
+
+  /* ── PANEL KOLUMN: większe tap targety, panel pomieści wszystkie 3 rzędy ── */
+  .col-panel.open { max-height: 260px; }
+  .col-panel-inner { padding: 10px 12px; gap: 8px; }
+  .col-panel-inner label {
+    padding: 10px 14px;
+    min-height: 40px;
+    font-size: 13px;
+    flex: 1 1 calc(50% - 8px);
+  }
+  .col-panel-inner input[type=checkbox] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+  }
+
+  /* ── NAGŁÓWEK PROJEKTU: sticky przy lewej krawędzi viewportu + wrap ── */
+  /* żeby przycisk "Dodaj" nie chował się za horyzontalny scroll tabeli */
+  .proj-hdr {
+    position: sticky;
+    left: 0;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .proj-hdr .proj-title-inp {
+    flex: 1 1 100%;
+    order: 1;
+    font-size: 15px;
+    padding: 6px 8px;
+  }
+  /* toggle (▼/▶) — pierwszy, obok tytułu */
+  .proj-hdr > .btn-tog { order: 0; }
+  /* pasek postępu i meta — drugi rząd */
+  .proj-hdr > div:not(.proj-title-inp) { order: 2; }
+  .proj-hdr-meta { order: 3; }
+  /* przyciski Dodaj/✕ — ostatni rząd, większe */
+  .proj-hdr .btn-add-child { order: 4; min-height: 38px; padding: 8px 14px; font-size: 12px; }
+  .proj-hdr .btn-del { order: 5; min-height: 38px; padding: 8px 14px; }
+
+  /* Add-inline pod ostatnim projektem też sticky żeby był widoczny */
+  .add-row td .add-inline,
+  tr[style*="#253a5a"] .add-inline {
+    position: sticky;
+    left: 0;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    box-sizing: border-box;
+    padding: 10px 10px;
+    min-height: 40px;
+  }
 
   /* ── GANTT: przełącznik + karty ── */
   .gantt-mode-toggle { order: -1; width: 100%; }
