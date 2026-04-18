@@ -2,6 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import type { WbsNode } from '../types';
 import { mkNode, overallProgress, rootWeightSum, rootWeightedSum } from '../utils/wbs';
 import { persistStore } from './persistence';
+import { logChange } from './changelog';
 
 export const tree = writable<WbsNode[]>([]);
 persistStore(tree, 'wbs_tree');
@@ -14,6 +15,7 @@ export const weightedTotal = derived(tree, ($t) => rootWeightedSum($t));
 /** Add a new top-level project */
 export function addRoot(): void {
   tree.update(($t) => [...$t, mkNode('', 0, 0, '', true)]);
+  logChange('edit', 'Dodano punkt główny');
 }
 
 /** Add a child under the given parent id */
@@ -24,6 +26,7 @@ export function addChild(parentId: number): void {
     if (parent) parent.children.push(mkNode('', 0, 0, ''));
     return copy;
   });
+  logChange('edit', 'Dodano podpunkt');
 }
 
 /** Add a sibling after the given node id */
@@ -36,15 +39,20 @@ export function addSibling(nodeId: number): void {
     if (idx >= 0) list.splice(idx + 1, 0, mkNode('', 0, 0, ''));
     return copy;
   });
+  logChange('edit', 'Dodano element obok');
 }
 
 /** Delete a node by id */
 export function delNode(id: number): void {
+  let name = '';
   tree.update(($t) => {
     const copy = structuredClone($t);
+    const n = findNode(copy, id);
+    if (n) name = n.name || n._code || '';
     removeById(copy, id);
     return copy;
   });
+  logChange('edit', 'Usunięto: ' + (name || '(bez nazwy)'));
 }
 
 /** Update a single field on a node */
