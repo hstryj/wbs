@@ -1057,13 +1057,13 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
   <div class="col-panel-inner">
     <span style="font-size:11px;font-weight:700;color:#1F3864;margin-right:4px">Pokaż kolumny:</span>
     <label><input type="checkbox" data-colname="waga" checked onchange="applyColVis()"> Waga</label>
-    <label><input type="checkbox" data-colname="waz"  checked onchange="applyColVis()"> Ważone</label>
+    <label><input type="checkbox" data-colname="waz"         onchange="applyColVis()"> Ważone</label>
     <label><input type="checkbox" data-colname="rag"  checked onchange="applyColVis()"> RAG</label>
-    <label><input type="checkbox" data-colname="md"   checked onchange="applyColVis()"> MD</label>
-    <label><input type="checkbox" data-colname="start" checked onchange="applyColVis()"> Start</label>
+    <label><input type="checkbox" data-colname="md"          onchange="applyColVis()"> MD</label>
+    <label><input type="checkbox" data-colname="start"       onchange="applyColVis()"> Start</label>
     <label><input type="checkbox" data-colname="end"  checked onchange="applyColVis()"> Koniec</label>
     <label><input type="checkbox" data-colname="pri"  checked onchange="applyColVis()"> Priorytet</label>
-    <label><input type="checkbox" data-colname="note" checked onchange="applyColVis()"> Uwagi</label>
+    <label><input type="checkbox" data-colname="note"        onchange="applyColVis()"> Uwagi</label>
   </div>
 </div>
 <div class="val-box" id="val-box"><h3>Błędy walidacji</h3><ul id="val-list"></ul></div>
@@ -1073,19 +1073,19 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
   <div class="tbl-wrap">
     <table class="main">
       <thead><tr>
-        <th style="width:108px">Kod WBS</th>
+        <th style="width:80px">Kod WBS</th>
         <th>Pakiet roboczy / Opis</th>
-        <th style="width:82px;text-align:center" data-col="waga">Waga (%)</th>
-        <th style="width:96px">Ukończenie</th>
-        <th style="width:76px;text-align:center" data-col="waz">Ważone</th>
-        <th style="width:160px">Odpowiedzialny</th>
-        <th style="width:80px;text-align:center" data-col="rag">RAG</th>
-        <th style="width:72px;text-align:center" data-col="md">MD</th>
+        <th style="width:72px;text-align:center" data-col="waga">Waga (%)</th>
+        <th style="width:88px">Ukończenie</th>
+        <th style="width:64px;text-align:center" data-col="waz">Ważone</th>
+        <th style="width:130px">Odpowiedzialny</th>
+        <th style="width:62px;text-align:center" data-col="rag">RAG</th>
+        <th style="width:56px;text-align:center" data-col="md">MD</th>
         <th style="width:92px;text-align:center" data-col="start">Start</th>
         <th style="width:92px;text-align:center" data-col="end">Koniec</th>
-        <th style="width:120px" data-col="pri">Priorytet</th>
+        <th style="width:100px" data-col="pri">Priorytet</th>
         <th style="width:36px;text-align:center" data-col="note">📝</th>
-        <th style="width:130px">Akcje</th>
+        <th style="width:110px">Akcje</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
       <tfoot id="tfoot" style="display:none"><tr>
@@ -1842,7 +1842,7 @@ var hasNote=!!(n.note&&n.note.trim());
 var noteCell='<td data-col="note" style="text-align:center;padding:3px"><span class="note-icon" onclick="openNoteModal('+n.id+')" title="'+(hasNote?'Uwagi: '+esc(n.note.substring(0,60)):'Dodaj uwagi')+'">&#128203;'+(hasNote?'<sup style="font-size:8px;color:#2E75B6">●</sup>':'')+'</span></td>';
 rows.push('<tr style="background:'+c.bg+'"><td><span class="code">'+n._code+'</span></td><td>'+nameCell+'</td><td data-col="waga">'+weightCell+'</td><td>'+doneCell+'</td><td data-col="waz"><span class="wtd">'+wtd+'%</span></td><td>'+respCell+'</td>'+ragCell+mdCell+dateStartCell+dateEndCell+priCell+noteCell+'<td><div class="row-actions"><button class="btn-add-child" onclick="addChild('+n.id+')">'+plusBlue+' Dodaj podpunkt</button><button class="btn-del" onclick="del('+n.id+')">&#10005;</button></div></td></tr>');if(n.children.length>0&&!n.collapsed)buildRows(n.children,rows);if(i===list.length-1){var pid=findParentNode(n.id);var oc=(pid===null||pid===undefined)?'addRoot()':'addSibling('+n.id+')';var lbl=d===0?'Dodaj kolejną sekcję główną':'Dodaj kolejny element na tym poziomie';rows.push('<tr class="add-row" style="background:'+c.bg+'"><td colspan="8"><div class="add-inline" onclick="'+oc+'">'+plusGray+lbl+'</div></td></tr>');}}return rows;}
 
-function renderTable(){assignCodes();runValidation();if(TREE.length===0){document.getElementById('tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:48px 24px;color:#7a92ad"><div style="font-size:32px;opacity:.3;margin-bottom:12px">&#128196;</div><p>Brak elementów WBS.<br>Kliknij <strong>Dodaj sekcję</strong>.</p></td></tr>';document.getElementById('tfoot').style.display='none';document.getElementById('warn-bar').style.display='none';if(document.getElementById('overall'))document.getElementById('overall').textContent='–';return;}document.getElementById('tbody').innerHTML=buildRows().join('');document.getElementById('tfoot').style.display='';var rw=rootWeightSum(),rwtd=rootWeightedSum(),tot=rw>0?rwtd/rw*100:0;if(document.getElementById('overall'))document.getElementById('overall').textContent=tot.toFixed(1)+'%';document.getElementById('ft-w').textContent=rw.toFixed(1)+'%';document.getElementById('ft-wt').textContent=rwtd.toFixed(1)+'%';var diff=Math.round((rw-100)*10)/10,el=document.getElementById('warn-bar');el.style.display='';if(Math.abs(diff)<0.05){el.textContent='Suma wag = 100% \u2713';el.className='warn-bar warn-ok';}else if(diff>0){el.textContent='Suma wag przekracza 100% o '+diff.toFixed(1)+'%';el.className='warn-bar warn-bad';}else{el.textContent='Suma wag: brakuje '+Math.abs(diff).toFixed(1)+'%';el.className='warn-bar warn-bad';}if(ACTIVE_TAB!=='table'&&ACTIVE_TAB!=='')switchTab(ACTIVE_TAB);}
+function renderTable(){assignCodes();runValidation();if(TREE.length===0){document.getElementById('tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:48px 24px;color:#7a92ad"><div style="font-size:32px;opacity:.3;margin-bottom:12px">&#128196;</div><p>Brak elementów WBS.<br>Kliknij <strong>Dodaj sekcję</strong>.</p></td></tr>';document.getElementById('tfoot').style.display='none';document.getElementById('warn-bar').style.display='none';if(document.getElementById('overall'))document.getElementById('overall').textContent='–';return;}document.getElementById('tbody').innerHTML=buildRows().join('');document.getElementById('tfoot').style.display='';var rw=rootWeightSum(),rwtd=rootWeightedSum(),tot=rw>0?rwtd/rw*100:0;if(document.getElementById('overall'))document.getElementById('overall').textContent=tot.toFixed(1)+'%';document.getElementById('ft-w').textContent=rw.toFixed(1)+'%';document.getElementById('ft-wt').textContent=rwtd.toFixed(1)+'%';var diff=Math.round((rw-100)*10)/10,el=document.getElementById('warn-bar');el.style.display='';if(Math.abs(diff)<0.05){el.textContent='Suma wag = 100% \u2713';el.className='warn-bar warn-ok';}else if(diff>0){el.textContent='Suma wag przekracza 100% o '+diff.toFixed(1)+'%';el.className='warn-bar warn-bad';}else{el.textContent='Suma wag: brakuje '+Math.abs(diff).toFixed(1)+'%';el.className='warn-bar warn-bad';}if(ACTIVE_TAB!=='table'&&ACTIVE_TAB!=='')switchTab(ACTIVE_TAB);applyColVis();}
 function render(){renderTable();}
 
 // ── tab switching ──────────────────────────────────────────────
@@ -2719,9 +2719,11 @@ function toggleColPanel(){
 }
 function applyColVis(){
   var cbs=document.querySelectorAll('#col-panel input[data-colname]');
+  var state={};
   cbs.forEach(function(cb){
     var col=cb.getAttribute('data-colname');
     var show=cb.checked;
+    state[col]=show;
     // header
     var th=document.querySelector('th[data-col="'+col+'"]');
     if(th) th.style.display=show?'':'none';
@@ -2730,6 +2732,20 @@ function applyColVis(){
       td.style.display=show?'':'none';
     });
   });
+  try{localStorage.setItem('wbs_col_vis',JSON.stringify(state));}catch(e){}
+}
+
+function initColVis(){
+  var state=null;
+  try{var raw=localStorage.getItem('wbs_col_vis');if(raw)state=JSON.parse(raw);}catch(e){}
+  if(state){
+    var cbs=document.querySelectorAll('#col-panel input[data-colname]');
+    cbs.forEach(function(cb){
+      var col=cb.getAttribute('data-colname');
+      if(Object.prototype.hasOwnProperty.call(state,col)){cb.checked=!!state[col];}
+    });
+  }
+  applyColVis();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4840,6 +4856,7 @@ function showWeightWarn(currentSum, attempted, maxAllowed){
 }
 
 render();
+initColVis();
 </script>
 </body>
 </html>
