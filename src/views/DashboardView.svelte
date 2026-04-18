@@ -107,9 +107,9 @@
 <div class="inner-pane dash-root">
   <!-- ── Two-column: Attention + Sections progress ─────────────── -->
   <div class="dash-grid">
-    <section class="panel">
+    <section class="panel panel-attention">
       <header class="panel-hdr">
-        <h2>Co wymaga uwagi dzisiaj?</h2>
+        <h2><span class="panel-marker"></span>Co wymaga uwagi dzisiaj?</h2>
       </header>
 
       <button class="alert-row" on:click={() => { statusFilter = 'opoznione'; }} type="button">
@@ -145,9 +145,9 @@
       </button>
     </section>
 
-    <section class="panel">
+    <section class="panel panel-progress">
       <header class="panel-hdr">
-        <h2>Zaawansowanie sekcji głównych</h2>
+        <h2><span class="panel-marker"></span>Zaawansowanie sekcji głównych</h2>
         <span class="panel-meta">{overall.toFixed(1)}% ogółem</span>
       </header>
 
@@ -176,9 +176,9 @@
   </div>
 
   <!-- ── Tasks table ─────────────────────────────────────────── -->
-  <section class="panel tasks-panel">
+  <section class="panel tasks-panel panel-tasks">
     <header class="panel-hdr">
-      <h2>Zadania</h2>
+      <h2><span class="panel-marker"></span>Zadania</h2>
       <div class="filters">
         {#each STATUS_ORDER as s}
           {@const count = statusCount(s)}
@@ -297,7 +297,10 @@
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
+    transition: box-shadow .12s ease;
   }
+  .panel:hover { box-shadow: var(--shadow-sm); }
+
   .panel-hdr {
     display: flex;
     justify-content: space-between;
@@ -311,12 +314,30 @@
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .panel-meta {
     font-size: 11px;
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
   }
+
+  /* Kolor-coded panel markers (4px pionowy pasek obok tytułu sekcji,
+     daje natychmiastowe rozróżnienie kategorii) */
+  .panel-marker {
+    display: inline-block;
+    width: 3px;
+    height: 16px;
+    border-radius: 1px;
+    background: var(--color-neutral);
+  }
+  .panel-attention .panel-marker { background: var(--color-warning); }
+  .panel-attention .panel-hdr { background: linear-gradient(to right, var(--color-warning-bg), transparent 35%); }
+  .panel-progress  .panel-marker { background: var(--brand-primary); }
+  .panel-progress  .panel-hdr { background: linear-gradient(to right, var(--brand-primary-bg), transparent 35%); }
+  .panel-tasks     .panel-marker { background: var(--color-neutral); }
 
   /* Alert rows (attention panel) */
   .alert-row {
@@ -339,7 +360,11 @@
     transition: background .12s ease;
   }
   .alert-row:last-of-type { border-bottom: none; }
-  .alert-row:hover { background: var(--bg-muted); }
+  .alert-row:hover {
+    background: var(--brand-primary-bg);
+    box-shadow: inset 3px 0 0 var(--brand-primary);
+  }
+  .alert-row:hover .alert-label { color: var(--brand-primary-dark); }
   .alert-label { color: var(--text-primary); font-weight: 500; }
   .alert-count {
     font-size: 16px;
@@ -369,7 +394,18 @@
     gap: 10px;
     padding: 14px 16px;
   }
-  .section-row { display: flex; flex-direction: column; gap: 5px; }
+  .section-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 8px;
+    margin: 0 -8px;
+    border-radius: var(--radius-sm);
+    transition: background .1s ease;
+  }
+  .section-row:hover { background: var(--bg-muted); }
+  .section-row:hover .section-name { color: var(--brand-primary-dark); }
+  .section-row:hover .section-bar { background: var(--bg-subtle); }
   .section-label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .section-name {
     font-size: 12px;
