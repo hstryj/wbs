@@ -13,7 +13,9 @@
   import GanttView from './views/GanttView.svelte';
   import WbsEditorView from './views/WbsEditorView.svelte';
   import TeamView from './views/TeamView.svelte';
-  import StubView from './views/StubView.svelte';
+  import WorklogReportView from './views/WorklogReportView.svelte';
+  import OrdersView from './views/OrdersView.svelte';
+  import ReportView from './views/ReportView.svelte';
 </script>
 
 <div class="wrap">
@@ -40,10 +42,10 @@
   {:else if $activeTab === 'team'}
     <TeamView />
   {:else if $activeTab === 'report'}
-    <StubView name="Raport" description="Generowanie raportu PDF z podsumowaniem projektu." />
+    <ReportView />
   {:else if $activeTab === 'wlreport'}
-    <StubView name="Raport godzin" description="Czas pracy per zadanie WBS, per pracownik/grupa. 4 sub-taby." />
+    <WorklogReportView />
   {:else if $activeTab === 'orders'}
-    <StubView name="Zamówienia" description="Listy materiałowe (BOM) + baza materiałów. Sub-taby." />
+    <OrdersView />
   {/if}
 </div>

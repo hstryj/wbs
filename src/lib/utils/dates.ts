@@ -21,3 +21,39 @@ export function getISOWeek(d: Date): [number, number] {
   const w1 = new Date(Date.UTC(y, 0, 4));
   return [y, Math.ceil(((dt.getTime() - w1.getTime()) / 86400000 + 1) / 7)];
 }
+
+export function weekKey(y: number, w: number): string {
+  return y + '-W' + (w < 10 ? '0' : '') + w;
+}
+
+/** Monday (ISO) of a given week, as a Date (UTC) */
+export function weekStartDate(y: number, w: number): Date {
+  const simple = new Date(Date.UTC(y, 0, 1 + (w - 1) * 7));
+  const dow = simple.getUTCDay() || 7;
+  const mon = new Date(simple);
+  mon.setUTCDate(simple.getUTCDate() - (dow - 1));
+  return mon;
+}
+
+/** Returns "DD.MM.YYYY" for a Date (UTC fields) */
+export function fmtDateShort(d: Date): string {
+  return d.getUTCDate() + '.' + (d.getUTCMonth() + 1) + '.' + d.getUTCFullYear();
+}
+
+/** Week range (Mon..Sun) as 7 ISO dates for a given ISO week */
+export function weekDates(y: number, w: number): string[] {
+  const mon = weekStartDate(y, w);
+  const out: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon);
+    d.setUTCDate(mon.getUTCDate() + i);
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
+
+/** Weeks in year (52 or 53 — quick approximation) */
+export function weeksInYear(y: number): number {
+  const dec28 = new Date(Date.UTC(y, 11, 28));
+  return getISOWeek(dec28)[1];
+}

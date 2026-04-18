@@ -11,10 +11,10 @@
     { id: 'rank',     label: '🎯 Ranking',       done: true  },
     { id: 'gantt',    label: '📅 Gantt',         done: true  },
     { id: 'risk',     label: '⚠️ Ryzyka',        done: true  },
-    { id: 'report',   label: '📄 Raport',        done: false },
+    { id: 'report',   label: '📄 Raport',        done: true  },
     { id: 'log',      label: '🕐 Dziennik',      done: true  },
-    { id: 'wlreport', label: '⏱ Raport godzin',  done: false },
-    { id: 'orders',   label: '🛒 Zamówienia',    done: false }
+    { id: 'wlreport', label: '⏱ Raport godzin',  done: true  },
+    { id: 'orders',   label: '🛒 Zamówienia',    done: true  }
   ];
 </script>
 
@@ -27,7 +27,6 @@
       title={tab.done ? 'Zmigrowany' : 'Nie zmigrowany — widok stub'}
     >
       {tab.label}
-      {#if !tab.done}<span style="font-size:9px;opacity:.5;margin-left:4px">WIP</span>{/if}
     </button>
   {/each}
 </div>
