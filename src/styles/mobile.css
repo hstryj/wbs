@@ -84,20 +84,20 @@
     z-index: 2;
     box-shadow: 2px 0 0 rgba(0,0,0,.06);
   }
-  /* Nagłówki sticky muszą być nad body */
-  table.main thead th:first-child { background-color: #2E75B6; z-index: 3; }
+  /* Nagłówki sticky muszą być nad body — używamy tokenów żeby zgadzały się z theme */
+  table.main thead th:first-child,
   table.rank thead th:first-child,
-  table.risk thead th:first-child { background-color: #1F3864; z-index: 3; }
+  table.risk thead th:first-child { background-color: var(--table-header-bg); z-index: 3; }
   table.main tfoot td:first-child {
-    position: sticky; left: 0; background-color: #1a3057; z-index: 2;
+    position: sticky; left: 0; background-color: var(--bg-subtle); z-index: 2;
   }
   /* Wiersze bez inline bg (rank/risk): explicit bg dla sticky */
-  table.rank tbody tr td:first-child { background-color: #fff; }
-  table.rank tr:nth-child(even) td:first-child { background-color: #f4f8fc; }
-  table.rank tr:hover td:first-child { background-color: #e8f3fb; }
-  table.risk tbody tr td:first-child { background-color: #fff; }
-  table.risk tr:nth-child(even) td:first-child { background-color: #f4f8fc; }
-  table.risk tr:hover td:first-child { background-color: #e8f3fb; }
+  table.rank tbody tr td:first-child { background-color: var(--bg-surface); }
+  table.rank tr:nth-child(even) td:first-child { background-color: var(--table-stripe); }
+  table.rank tr:hover td:first-child { background-color: var(--table-hover); }
+  table.risk tbody tr td:first-child { background-color: var(--bg-surface); }
+  table.risk tr:nth-child(even) td:first-child { background-color: var(--table-stripe); }
+  table.risk tr:hover td:first-child { background-color: var(--table-hover); }
 
   /* Większe cele dotykowe wewnątrz komórek tabeli */
   table.main input.inum,

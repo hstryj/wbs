@@ -51,9 +51,10 @@
 /* TABLE */
 .tbl-wrap{overflow-x:auto;background:var(--bg-surface);border:1px solid var(--border);border-top:none}
 table.main{width:100%;border-collapse:collapse}
-table.main thead th{background:var(--table-header-bg);color:var(--table-header-text);padding:10px 10px;font-size:11px;font-weight:700;text-align:left;white-space:nowrap;border-right:1px solid rgba(255,255,255,.12);letter-spacing:.02em}
+table.main thead th{background:var(--table-header-bg);color:var(--table-header-text);padding:9px 10px;font-size:11px;font-weight:600;text-align:left;white-space:nowrap;border-right:1px solid var(--border);border-bottom:2px solid var(--brand-primary);letter-spacing:.02em;text-transform:uppercase}
+table.main thead th:last-child{border-right:none}
 table.main td{padding:0;border-bottom:1px solid var(--border-subtle);vertical-align:middle;color:var(--text-primary)}
-table.main tfoot td{background:var(--brand-primary-dark);color:#fff;font-weight:700;font-size:12px;padding:10px 10px}
+table.main tfoot td{background:var(--bg-subtle);color:var(--text-primary);font-weight:700;font-size:12px;padding:10px 10px;border-top:2px solid var(--brand-primary)}
 input.iname{border:none;background:transparent;color:inherit;font-size:inherit;font-weight:inherit;padding:7px;width:100%;font-family:inherit;display:block}
 input.iname:focus{outline:2px solid var(--brand-primary);outline-offset:-2px;background:var(--bg-surface);color:var(--text-primary)}
 input.inum{border:none;background:transparent;color:var(--text-primary);font-size:12px;font-weight:700;padding:7px 4px;width:100%;text-align:center;font-family:inherit;display:block}
@@ -126,7 +127,7 @@ svg#tree-svg{font-family:Arial,sans-serif;display:block;margin:0 auto}
 .tc-bar-fg{height:8px;border-radius:3px;transition:width .3s ease}
 /* RANKING */
 table.rank{width:100%;border-collapse:collapse}
-table.rank thead th{background:var(--brand-primary-dark);color:#fff;padding:10px 12px;font-size:11px;font-weight:700;text-align:left;text-transform:uppercase;letter-spacing:.04em}
+table.rank thead th{background:var(--bg-muted);color:var(--text-primary);padding:10px 12px;font-size:11px;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--brand-primary)}
 table.rank td{padding:7px 10px;border-bottom:1px solid #e8f0f8;font-size:12px;vertical-align:middle}
 table.rank tr:nth-child(even) td{background:#f4f8fc}
 table.rank tr:hover td{background:#e8f3fb}
@@ -194,7 +195,7 @@ svg.gantt-svg{font-family:Arial,sans-serif;display:block}
 .gc-meta{display:flex;gap:14px;font-size:11px;color:#5a7aaa;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px solid #e0eaf5}
 /* ── Risk register ── */
 table.risk{width:100%;border-collapse:collapse}
-table.risk thead th{background:var(--brand-primary-dark);color:#fff;padding:10px 12px;font-size:11px;font-weight:700;text-align:left;text-transform:uppercase;letter-spacing:.04em}
+table.risk thead th{background:var(--bg-muted);color:var(--text-primary);padding:10px 12px;font-size:11px;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--brand-primary)}
 table.risk td{padding:6px 10px;border-bottom:1px solid #e8f0f8;font-size:12px;vertical-align:middle}
 table.risk tr:nth-child(even) td{background:#f4f8fc}
 table.risk tr:hover td{background:#e8f3fb}

@@ -26,8 +26,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  /* Inter stylistic features:
+     cv11 = single-storey 'a' (Apple/SAP vibe), 'zero' = slashed zero,
+     ss01 = alternate digits, ss03 = alternate g. */
+  font-feature-settings: 'cv11', 'ss01', 'ss03', 'zero';
   transition: background .25s ease, color .25s ease;
+}
+
+/* Headings — Inter looks best with slightly tighter letter-spacing at larger sizes */
+h1, h2, h3, h4 {
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
 }
 
 /* Monospace (for codes, numbers, etc.) — only where explicitly used */
@@ -38,7 +47,23 @@ code {
   font-feature-settings: 'zero';
 }
 
-/* Tabular numbers by default in tables */
+/* Tabular numbers by default in tables (cyfry równej szerokości dla sum) */
 table {
   font-variant-numeric: tabular-nums;
+}
+
+/* Focus states — enterprise clean outline */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 1px;
+}
+
+/* Selection */
+::selection {
+  background: var(--brand-primary-bg);
+  color: var(--brand-primary-dark);
 }
