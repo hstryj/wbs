@@ -3,18 +3,18 @@
   import { activeTab } from '../lib/state/ui';
 
   const tabs: Array<{ id: TabName; label: string; done: boolean }> = [
-    { id: 'table',    label: '📋 Edytor WBS',   done: true  },
-    { id: 'dash',     label: '📊 Dashboard',    done: true  },
-    { id: 'chart',    label: '🌳 Drzewo',        done: true  },
-    { id: 'wfall',    label: '📉 Waterfall wag', done: true  },
-    { id: 'team',     label: '👥 Zespół',        done: true  },
-    { id: 'rank',     label: '🎯 Ranking',       done: true  },
-    { id: 'gantt',    label: '📅 Gantt',         done: true  },
-    { id: 'risk',     label: '⚠️ Ryzyka',        done: true  },
-    { id: 'report',   label: '📄 Raport',        done: true  },
-    { id: 'log',      label: '🕐 Dziennik',      done: true  },
-    { id: 'wlreport', label: '⏱ Raport godzin',  done: true  },
-    { id: 'orders',   label: '🛒 Zamówienia',    done: true  }
+    { id: 'dash',     label: 'Dashboard',       done: true },
+    { id: 'table',    label: 'Edytor WBS',      done: true },
+    { id: 'rank',     label: 'Zadania',         done: true },
+    { id: 'team',     label: 'Zespół',          done: true },
+    { id: 'gantt',    label: 'Harmonogram',     done: true },
+    { id: 'wlreport', label: 'Raport godzin',   done: true },
+    { id: 'orders',   label: 'Zamówienia',      done: true },
+    { id: 'risk',     label: 'Ryzyka',          done: true },
+    { id: 'report',   label: 'Raport',          done: true },
+    { id: 'chart',    label: 'Drzewo',          done: true },
+    { id: 'wfall',    label: 'Waterfall wag',   done: true },
+    { id: 'log',      label: 'Dziennik',        done: true }
   ];
 </script>
 

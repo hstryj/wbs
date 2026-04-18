@@ -1,7 +1,9 @@
 <script lang="ts">
   import Topbar from './components/Topbar.svelte';
+  import ProjectHeader from './components/ProjectHeader.svelte';
   import Toolbar from './components/Toolbar.svelte';
   import TabBar from './components/TabBar.svelte';
+  import StatusBar from './components/StatusBar.svelte';
   import { activeTab } from './lib/state/ui';
 
   import DashboardView from './views/DashboardView.svelte';
@@ -20,6 +22,7 @@
 
 <div class="wrap">
   <Topbar />
+  <ProjectHeader />
   <Toolbar />
   <TabBar />
 
@@ -48,4 +51,6 @@
   {:else if $activeTab === 'orders'}
     <OrdersView />
   {/if}
+
+  <StatusBar />
 </div>
