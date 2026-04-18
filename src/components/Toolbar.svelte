@@ -10,6 +10,4 @@
     </svg>
     Dodaj punkt główny
   </button>
-  <span class="sep"></span>
-  <span style="font-size:11px;color:#7a92ad">Migracja Svelte — w toku</span>
 </div>

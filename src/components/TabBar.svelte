@@ -3,18 +3,18 @@
   import { activeTab } from '../lib/state/ui';
 
   const tabs: Array<{ id: TabName; label: string; done: boolean }> = [
-    { id: 'table',    label: '📋 Edytor WBS',   done: false },
+    { id: 'table',    label: '📋 Edytor WBS',   done: true  },
     { id: 'dash',     label: '📊 Dashboard',    done: true  },
-    { id: 'chart',    label: '🌳 Drzewo',        done: false },
-    { id: 'wfall',    label: '📉 Waterfall wag', done: false },
-    { id: 'team',     label: '👥 Zespół',        done: false },
-    { id: 'rank',     label: '🎯 Ranking',       done: false },
-    { id: 'gantt',    label: '📅 Gantt',         done: false },
-    { id: 'risk',     label: '⚠️ Ryzyka',        done: false },
-    { id: 'report',   label: '📄 Raport',        done: false },
-    { id: 'log',      label: '🕐 Dziennik',      done: false },
-    { id: 'wlreport', label: '⏱ Raport godzin',  done: false },
-    { id: 'orders',   label: '🛒 Zamówienia',    done: false }
+    { id: 'chart',    label: '🌳 Drzewo',        done: true  },
+    { id: 'wfall',    label: '📉 Waterfall wag', done: true  },
+    { id: 'team',     label: '👥 Zespół',        done: true  },
+    { id: 'rank',     label: '🎯 Ranking',       done: true  },
+    { id: 'gantt',    label: '📅 Gantt',         done: true  },
+    { id: 'risk',     label: '⚠️ Ryzyka',        done: true  },
+    { id: 'report',   label: '📄 Raport',        done: true  },
+    { id: 'log',      label: '🕐 Dziennik',      done: true  },
+    { id: 'wlreport', label: '⏱ Raport godzin',  done: true  },
+    { id: 'orders',   label: '🛒 Zamówienia',    done: true  }
   ];
 </script>
 
@@ -27,7 +27,6 @@
       title={tab.done ? 'Zmigrowany' : 'Nie zmigrowany — widok stub'}
     >
       {tab.label}
-      {#if !tab.done}<span style="font-size:9px;opacity:.5;margin-left:4px">WIP</span>{/if}
     </button>
   {/each}
 </div>

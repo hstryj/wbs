@@ -3,8 +3,19 @@
   import Toolbar from './components/Toolbar.svelte';
   import TabBar from './components/TabBar.svelte';
   import { activeTab } from './lib/state/ui';
+
   import DashboardView from './views/DashboardView.svelte';
-  import StubView from './views/StubView.svelte';
+  import RankingView from './views/RankingView.svelte';
+  import RisksView from './views/RisksView.svelte';
+  import ChangelogView from './views/ChangelogView.svelte';
+  import TreeView from './views/TreeView.svelte';
+  import WaterfallView from './views/WaterfallView.svelte';
+  import GanttView from './views/GanttView.svelte';
+  import WbsEditorView from './views/WbsEditorView.svelte';
+  import TeamView from './views/TeamView.svelte';
+  import WorklogReportView from './views/WorklogReportView.svelte';
+  import OrdersView from './views/OrdersView.svelte';
+  import ReportView from './views/ReportView.svelte';
 </script>
 
 <div class="wrap">
@@ -12,29 +23,29 @@
   <Toolbar />
   <TabBar />
 
-  {#if $activeTab === 'dash'}
+  {#if $activeTab === 'table'}
+    <WbsEditorView />
+  {:else if $activeTab === 'dash'}
     <DashboardView />
-  {:else if $activeTab === 'table'}
-    <StubView name="Edytor WBS" description="Tabela hierarchiczna z zadaniami, wagami, terminami. Najbardziej złożony widok — migracja na końcu." />
-  {:else if $activeTab === 'chart'}
-    <StubView name="Drzewo" description="Wizualizacja hierarchii WBS jako drzewa SVG." />
-  {:else if $activeTab === 'wfall'}
-    <StubView name="Waterfall wag" description="Wykres kaskadowy wag sekcji." />
-  {:else if $activeTab === 'team'}
-    <StubView name="Widok zespołu" description="Karty pracowników z ich zadaniami i godzinami." />
   {:else if $activeTab === 'rank'}
-    <StubView name="Ranking zadań" description="Sortowane zadania wg priorytetu / score / ukończenia." />
-  {:else if $activeTab === 'gantt'}
-    <StubView name="Gantt" description="Oś czasu projektu + tryb listy (karty) na mobile." />
+    <RankingView />
   {:else if $activeTab === 'risk'}
-    <StubView name="Rejestr ryzyk" description="Lista ryzyk z poziomami H/M/L." />
-  {:else if $activeTab === 'report'}
-    <StubView name="Raport" description="Generowanie raportu PDF." />
+    <RisksView />
   {:else if $activeTab === 'log'}
-    <StubView name="Dziennik" description="Historia zmian + snapshoty." />
+    <ChangelogView />
+  {:else if $activeTab === 'chart'}
+    <TreeView />
+  {:else if $activeTab === 'wfall'}
+    <WaterfallView />
+  {:else if $activeTab === 'gantt'}
+    <GanttView />
+  {:else if $activeTab === 'team'}
+    <TeamView />
+  {:else if $activeTab === 'report'}
+    <ReportView />
   {:else if $activeTab === 'wlreport'}
-    <StubView name="Raport godzin" description="Czas pracy per zadanie WBS, per pracownik/grupa." />
+    <WorklogReportView />
   {:else if $activeTab === 'orders'}
-    <StubView name="Zamówienia" description="Listy materiałowe + baza materiałów." />
+    <OrdersView />
   {/if}
 </div>
