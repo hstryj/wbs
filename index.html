@@ -2,6 +2,9 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1F3864">
+<meta name="format-detection" content="telephone=no">
 <title>WBS – Edytor zaawansowania</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -618,6 +621,74 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
 .wl-sub-row-name{color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;padding-right:6px}
 .wl-sub-row-h{font-weight:700;color:#1F3864;white-space:nowrap}
 .wl-sub-row-h.zero{color:#bbb;font-weight:400}
+
+/* ============================================================
+   MOBILE — Etap 1: fundament (foundations)
+   Celowo nadpisuje tylko na wąskich ekranach, desktop bez zmian.
+   ============================================================ */
+
+/* Zapobiega auto-zoom na iOS przy kliknięciu w input (wymaga ≥16px) */
+@media (max-width: 900px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Tablet / duży telefon w landscape */
+@media (max-width: 900px) {
+  body { font-size: 14px; }
+  .wrap { padding: 8px; max-width: 100%; }
+
+  .topbar { padding: 10px 12px; border-radius: 0; }
+  .topbar h1 { font-size: 15px; }
+  .pill { font-size: 12px; padding: 4px 10px; }
+
+  .toolbar { padding: 8px; gap: 8px; }
+  .toolbar .sep { display: none; }
+  .warn-bar { margin-left: 0; width: 100%; text-align: center; font-size: 12px; }
+
+  .view-tabs { -webkit-overflow-scrolling: touch; }
+  .view-tab { padding: 12px 14px; font-size: 13px; min-height: 44px; }
+
+  .inner-pane { padding: 14px 12px; }
+  .people-inner { padding: 12px 14px; }
+  .add-person-form { flex-direction: column; align-items: stretch; }
+  .add-person-form input { width: 100%; }
+
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .kpi-card { padding: 12px 14px; }
+  .kpi-value { font-size: 22px; }
+  .kpi-label { font-size: 12px; }
+
+  .modal-box, .modal-box2 { max-width: 96vw; width: 96vw; }
+  .modal-body { padding: 14px; }
+  .modal-footer { padding: 10px 14px; flex-wrap: wrap; }
+}
+
+/* Telefon w portrait */
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+
+  /* Większe touch targety — minimum ~44px zalecane przez Apple/Google */
+  .btn { min-height: 42px; padding: 10px 14px; font-size: 13px; }
+  .btn-add-child, .btn-del, .btn-tog { min-height: 36px; padding: 8px 10px; }
+
+  .view-tab { padding: 14px 16px; font-size: 13px; }
+
+  /* Sugestia wizualna: tabela przewija się poziomo */
+  .tbl-wrap { position: relative; }
+  .tbl-wrap::after {
+    content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 20px;
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,.06));
+    pointer-events: none;
+  }
+}
+
+/* Bardzo małe telefony (iPhone SE itp.) */
+@media (max-width: 380px) {
+  .wrap { padding: 4px; }
+  .topbar { padding: 8px 10px; }
+  .topbar h1 { font-size: 14px; }
+  .inner-pane { padding: 12px 8px; }
+}
 </style>
 </head>
 <body>
