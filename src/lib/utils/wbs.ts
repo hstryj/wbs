@@ -1,0 +1,147 @@
+import type { WbsNode } from '../types';
+import { uid, resetUid } from './id';
+
+export function mkNode(
+  name = '',
+  weight = 0,
+  done = 0,
+  resp = '',
+  isProject = false
+): WbsNode {
+  return {
+    id: uid(),
+    name,
+    weight,
+    done,
+    resp,
+    priority: '',
+    rag: '',
+    note: '',
+    dateStart: '',
+    dateEnd: '',
+    md: 0,
+    isProject,
+    children: [],
+    collapsed: false
+  };
+}
+
+export function isLeaf(n: WbsNode): boolean {
+  return !n.isProject && (!n.children || n.children.length === 0);
+}
+
+/** Walk the tree and assign WBS codes like "1.2.3" to each node. Mutates. */
+export function assignCodes(tree: WbsNode[]): void {
+  let projIdx = 0;
+  for (const n of tree) {
+    if (n.isProject) {
+      projIdx++;
+      n._code = '';
+      assignCodesChildren(n.children, '');
+    } else {
+      // shouldn't happen with normal data model but be safe
+      assignCodesChildren([n], '');
+    }
+  }
+  if (projIdx === 0) {
+    // flat tree (no projects)
+    assignCodesChildren(tree, '');
+  }
+  // also keep uid counter past max id to avoid collisions
+  let maxId = 0;
+  const walk = (ns: WbsNode[]) => {
+    for (const n of ns) {
+      if (n.id > maxId) maxId = n.id;
+      if (n.children.length) walk(n.children);
+    }
+  };
+  walk(tree);
+  resetUid(maxId);
+}
+
+function assignCodesChildren(list: WbsNode[], prefix: string): void {
+  let idx = 0;
+  for (const n of list) {
+    idx++;
+    n._code = prefix ? prefix + '.' + idx : String(idx);
+    if (n.children.length) assignCodesChildren(n.children, n._code);
+  }
+}
+
+export function collectLeaves(tree: WbsNode[], out: WbsNode[] = []): WbsNode[] {
+  for (const n of tree) {
+    if (n.isProject) {
+      collectLeaves(n.children, out);
+    } else if (isLeaf(n)) {
+      out.push(n);
+    } else {
+      collectLeaves(n.children, out);
+    }
+  }
+  return out;
+}
+
+export function childWeightSum(children: WbsNode[]): number {
+  return children.reduce((a, n) => a + (n.weight || 0), 0);
+}
+
+export function childWeightedSum(children: WbsNode[]): number {
+  return children.reduce((a, n) => {
+    const w = n.weight || 0;
+    const d = nodeDonePct(n);
+    return a + (w * d) / 100;
+  }, 0);
+}
+
+/** Effective % done of a node — leaf uses .done; parent derives from children */
+export function nodeDonePct(n: WbsNode): number {
+  if (isLeaf(n)) return n.done || 0;
+  const cw = childWeightSum(n.children);
+  if (cw < 0.001) return 0;
+  return (childWeightedSum(n.children) / cw) * 100;
+}
+
+/** weighted contribution of a node to its parent's progress */
+export function nodeWtd(n: WbsNode): number {
+  const w = n.weight || 0;
+  return (w * nodeDonePct(n)) / 100;
+}
+
+export function rootWeightSum(tree: WbsNode[]): number {
+  // sum weights of top-level non-project nodes, or children of projects
+  let sum = 0;
+  for (const n of tree) {
+    if (n.isProject) {
+      sum += childWeightSum(n.children);
+    } else {
+      sum += n.weight || 0;
+    }
+  }
+  return sum;
+}
+
+export function rootWeightedSum(tree: WbsNode[]): number {
+  let sum = 0;
+  for (const n of tree) {
+    if (n.isProject) {
+      sum += childWeightedSum(n.children);
+    } else {
+      sum += nodeWtd(n);
+    }
+  }
+  return sum;
+}
+
+export function overallProgress(tree: WbsNode[]): number {
+  const rw = rootWeightSum(tree);
+  if (rw <= 0) return 0;
+  return (rootWeightedSum(tree) / rw) * 100;
+}
+
+export function barColor(pct: number): string {
+  if (pct >= 100) return '#3B7A1E';
+  if (pct >= 75) return '#6CA538';
+  if (pct >= 50) return '#2E75B6';
+  if (pct >= 25) return '#ED7D31';
+  return '#C65911';
+}
