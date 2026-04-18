@@ -164,6 +164,32 @@ svg.wf-svg{font-family:Arial,sans-serif;display:block}
 /* ── Gantt ── */
 .gantt-wrap{overflow-x:auto;overflow-y:auto;background:#fff;border:1px solid #c5d4e8;border-top:none;max-height:600px}
 svg.gantt-svg{font-family:Arial,sans-serif;display:block}
+/* Gantt — przełącznik trybu Oś czasu / Lista */
+.gantt-mode-toggle{display:inline-flex;border:1px solid #c5d4e8;border-radius:6px;overflow:hidden;background:#fff}
+.gantt-mode-btn{border:none;background:transparent;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#5a7aaa;font-family:Arial,sans-serif;white-space:nowrap}
+.gantt-mode-btn:hover{background:#e8f0fb;color:#1F3864}
+.gantt-mode-btn.active{background:#2E75B6;color:#fff}
+.gantt-mode-btn+.gantt-mode-btn{border-left:1px solid #c5d4e8}
+/* Gantt — widok listy (karty) */
+.gantt-list{background:#fff;border:1px solid #c5d4e8;border-top:none;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto}
+.gc-card{background:#f4f8fc;border:1px solid #d0deee;border-left:4px solid #5a7aaa;border-radius:8px;padding:10px 12px}
+.gc-card[data-over="1"]{background:#fff5f5;border-color:#f0cbcb}
+.gc-hdr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.gc-code{font-family:'Courier New',monospace;font-size:11px;color:#7a92ad;font-weight:700;background:#eaf1f8;padding:2px 6px;border-radius:3px;flex-shrink:0}
+.gc-name{font-weight:700;color:#1a3a6a;font-size:13px;flex:1;min-width:0;word-break:break-word}
+.gc-pri{font-size:11px;color:#5a7aaa;font-weight:600;white-space:nowrap}
+.gc-dates{display:flex;flex-wrap:wrap;gap:10px 14px;font-size:11px;color:#5a7aaa;margin-bottom:8px}
+.gc-dates b{color:#1F3864;font-weight:600}
+.gc-status{font-weight:700;font-size:11px}
+.gc-status.gc-over{color:#c0392b}
+.gc-status.gc-today{color:#7a4000}
+.gc-status.gc-soon{color:#7a4000}
+.gc-status.gc-ok{color:#3B7A1E}
+.gc-bar-wrap{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.gc-bar-bg{flex:1;height:8px;background:#e0eaf5;border-radius:4px;overflow:hidden}
+.gc-bar-fg{height:8px;border-radius:4px;transition:width .2s}
+.gc-pct{font-size:12px;font-weight:700;min-width:42px;text-align:right}
+.gc-meta{display:flex;gap:14px;font-size:11px;color:#5a7aaa;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px solid #e0eaf5}
 /* ── Risk register ── */
 table.risk{width:100%;border-collapse:collapse}
 table.risk thead th{background:#1F3864;color:#fff;padding:8px 10px;font-size:11px;font-weight:700;text-align:left}
@@ -809,6 +835,18 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
   #ord-body > div:first-child { flex-direction: column; align-items: stretch !important; gap: 8px; }
   #ord-body > div:first-child > input { width: 100% !important; min-height: 42px; padding: 10px 12px !important; }
   #ord-body > div:first-child > button { width: 100% !important; min-height: 44px; padding: 12px 16px !important; }
+
+  /* ── GANTT: przełącznik + karty ── */
+  .gantt-mode-toggle { order: -1; width: 100%; }
+  .gantt-mode-btn { flex: 1; padding: 11px 10px; font-size: 13px; min-height: 44px; }
+  .gantt-list { padding: 8px; max-height: none; }
+  .gc-card { padding: 12px; }
+  .gc-name { font-size: 14px; }
+  .gc-code { font-size: 12px; }
+  .gc-dates { font-size: 12px; }
+  .gc-status { font-size: 12px; }
+  .gc-pct { font-size: 13px; min-width: 46px; }
+  .gc-meta { font-size: 12px; }
 }
 </style>
 </head>
@@ -1137,6 +1175,10 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
 <!-- GANTT PANE -->
 <div class="view-pane" id="pane-gantt">
   <div class="ctrl-bar" style="padding:10px 14px;background:#f4f8fc;border-bottom:1px solid #e0eaf5;border:1px solid #c5d4e8;border-top:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="gantt-mode-toggle">
+      <button id="gm-timeline" class="gantt-mode-btn" onclick="setGanttMode('timeline')">📅 Oś czasu</button>
+      <button id="gm-list" class="gantt-mode-btn" onclick="setGanttMode('list')">📋 Lista</button>
+    </div>
     <label style="font-size:11px;color:#5a7aaa;font-weight:600">Pokaż:</label>
     <select id="gantt-filter" onchange="renderGantt()" style="font-size:11px;padding:3px 7px;border:1px solid #c5d4e8;border-radius:5px;font-family:Arial,sans-serif;color:#222">
       <option value="all">Wszystkie z datami</option>
@@ -1146,6 +1188,7 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
     <span style="font-size:11px;color:#7a92ad;margin-left:8px">Zadania bez dat nie są wyświetlane. Ustaw daty w Edytorze WBS.</span>
   </div>
   <div class="gantt-wrap"><svg class="gantt-svg" id="gantt-svg"></svg></div>
+  <div class="gantt-list" id="gantt-list" style="display:none"></div>
 </div>
 
 <!-- RISK PANE -->
@@ -2219,7 +2262,112 @@ function renderRiskTab(){
     +'</tr>';}).join('');
 }
 
+var GANTT_MODE=null;
+
+function getInitialGanttMode(){
+  try{var s=localStorage.getItem('wbs_gantt_mode');if(s==='list'||s==='timeline')return s;}catch(e){}
+  return (window.innerWidth<=768)?'list':'timeline';
+}
+
+function setGanttMode(mode){
+  GANTT_MODE=mode;
+  try{localStorage.setItem('wbs_gantt_mode',mode);}catch(e){}
+  renderGantt();
+}
+
 function renderGantt(){
+  if(GANTT_MODE===null) GANTT_MODE=getInitialGanttMode();
+  var btnT=document.getElementById('gm-timeline');
+  var btnL=document.getElementById('gm-list');
+  if(btnT) btnT.classList.toggle('active', GANTT_MODE==='timeline');
+  if(btnL) btnL.classList.toggle('active', GANTT_MODE==='list');
+  var wrap=document.querySelector('#pane-gantt .gantt-wrap');
+  var listWrap=document.getElementById('gantt-list');
+  if(GANTT_MODE==='list'){
+    if(wrap) wrap.style.display='none';
+    if(listWrap) listWrap.style.display='';
+    renderGanttList();
+  } else {
+    if(wrap) wrap.style.display='';
+    if(listWrap) listWrap.style.display='none';
+    renderGanttTimeline();
+  }
+}
+
+function renderGanttList(){
+  assignCodes();
+  var filter=document.getElementById('gantt-filter').value;
+  var leaves=collectLeaves();
+  var items=leaves.filter(function(n){
+    if(!n.dateStart&&!n.dateEnd)return false;
+    if(filter==='open'&&(n.done||0)>=100)return false;
+    if(filter==='critical'&&n.priority!=='Krytyczny')return false;
+    return true;
+  });
+  var cont=document.getElementById('gantt-list');
+  if(!items.length){
+    cont.innerHTML='<div style="padding:32px 20px;text-align:center;color:#7a92ad;font-size:13px">Brak zadań z ustawionymi datami.<br>Ustaw daty Start / Koniec w Edytorze WBS.</div>';
+    return;
+  }
+  var today=new Date().toISOString().slice(0,10);
+  // sort: przeterminowane najpierw, potem po terminie rosnąco
+  items.sort(function(a,b){
+    var aOver=a.dateEnd&&a.dateEnd<today&&(a.done||0)<100;
+    var bOver=b.dateEnd&&b.dateEnd<today&&(b.done||0)<100;
+    if(aOver&&!bOver) return -1;
+    if(!aOver&&bOver) return 1;
+    var ae=a.dateEnd||a.dateStart||'';
+    var be=b.dateEnd||b.dateStart||'';
+    if(ae!==be) return ae<be?-1:1;
+    return 0;
+  });
+  var priColors={'Krytyczny':'#cc0000','Wysoki':'#cc5500','Średni':'#2E75B6','Niski':'#3B7A1E','':'#5a7aaa'};
+  var priDot={'Krytyczny':'🔴','Wysoki':'🟠','Średni':'🔵','Niski':'🟢'};
+  var html=items.map(function(n){
+    var done=n.done||0;
+    var over=n.dateEnd&&n.dateEnd<today&&done<100;
+    var col=over?'#c0392b':(priColors[n.priority||'']||'#5a7aaa');
+    var status='';
+    if(over){
+      var daysOver=Math.ceil((new Date(today)-new Date(n.dateEnd))/86400000);
+      status='<span class="gc-status gc-over">⚠ Przeterminowane '+daysOver+' dn</span>';
+    } else if(n.dateEnd){
+      if(n.dateEnd===today){
+        status='<span class="gc-status gc-today">📌 Termin dziś</span>';
+      } else {
+        var daysLeft=Math.ceil((new Date(n.dateEnd)-new Date(today))/86400000);
+        if(daysLeft<=7){
+          status='<span class="gc-status gc-soon">⏰ za '+daysLeft+' dn</span>';
+        } else {
+          status='<span class="gc-status gc-ok">za '+daysLeft+' dn</span>';
+        }
+      }
+    }
+    return '<div class="gc-card"'+(over?' data-over="1"':'')+' style="border-left-color:'+col+'">'
+      +'<div class="gc-hdr">'
+        +'<span class="gc-code">'+escH(n._code||'')+'</span>'
+        +'<span class="gc-name">'+escH(n.name||'–')+'</span>'
+        +(n.priority?'<span class="gc-pri">'+(priDot[n.priority]||'')+' '+escH(n.priority)+'</span>':'')
+      +'</div>'
+      +'<div class="gc-dates">'
+        +(n.dateStart?'<span class="gc-date"><b>Start:</b> '+n.dateStart+'</span>':'')
+        +(n.dateEnd?'<span class="gc-date"><b>Koniec:</b> '+n.dateEnd+'</span>':'')
+        +status
+      +'</div>'
+      +'<div class="gc-bar-wrap">'
+        +'<div class="gc-bar-bg"><div class="gc-bar-fg" style="width:'+Math.min(done,100)+'%;background:'+col+'"></div></div>'
+        +'<span class="gc-pct" style="color:'+col+'">'+done+'%</span>'
+      +'</div>'
+      +((n.resp||n.md)?'<div class="gc-meta">'
+        +(n.resp?'<span>👤 '+escH(n.resp)+'</span>':'')
+        +(n.md?'<span>⏱ '+n.md+' md</span>':'')
+      +'</div>':'')
+    +'</div>';
+  }).join('');
+  cont.innerHTML=html;
+}
+
+function renderGanttTimeline(){
   assignCodes();
   var filter=document.getElementById('gantt-filter').value;
   var leaves=collectLeaves();
