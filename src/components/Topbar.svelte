@@ -38,18 +38,18 @@
 
 <style>
   .theme-toggle {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: inherit;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    width: 32px;
+    height: 32px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background .15s ease, transform .1s ease;
+    border-radius: var(--radius-sm);
+    transition: color .12s ease, background .12s ease;
   }
-  .theme-toggle:hover { background: rgba(255, 255, 255, 0.22); }
-  .theme-toggle:active { transform: scale(0.95); }
+  .theme-toggle:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+  .theme-toggle:active { background: rgba(255, 255, 255, 0.12); }
 </style>

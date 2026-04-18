@@ -3,56 +3,57 @@
    Light theme (default) + Dark theme (via [data-theme="dark"])
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* Surfaces */
-  --bg-body:         #f8fafc;
+  /* Surfaces — neutralne z ciepłym odcieniem (Atlassian/SAP inspired) */
+  --bg-body:         #f4f5f7;
   --bg-surface:      #ffffff;
   --bg-elevated:     #ffffff;
-  --bg-muted:        #f1f5f9;
-  --bg-subtle:       #e2e8f0;
+  --bg-muted:        #f9fafb;
+  --bg-subtle:       #eaecef;
 
-  /* Text */
-  --text-primary:    #0f172a;
-  --text-secondary:  #475569;
-  --text-muted:      #94a3b8;
+  /* Text — Atlassian navy skala */
+  --text-primary:    #172b4d;
+  --text-secondary:  #5e6c84;
+  --text-muted:      #97a0af;
   --text-inverted:   #ffffff;
 
-  /* Borders */
-  --border:          #e2e8f0;
-  --border-subtle:   #f1f5f9;
-  --border-strong:   #cbd5e1;
+  /* Borders — subtelniejsze, neutralne (nie blue-tinted) */
+  --border:          #dfe1e6;
+  --border-subtle:   #ebecf0;
+  --border-strong:   #c1c7d0;
 
-  /* Brand (deep professional blue) */
-  --brand-primary:       #2563eb;
-  --brand-primary-dark:  #1e40af;
-  --brand-primary-hover: #1d4ed8;
-  --brand-primary-bg:    #dbeafe;
+  /* Brand — SAP Fiori deep blue, muted, serious enterprise */
+  --brand-primary:       #0a6ed1;
+  --brand-primary-dark:  #0854a0;
+  --brand-primary-hover: #085caf;
+  --brand-primary-bg:    #e5f0fb;
 
-  /* Semantic */
-  --color-success:    #16a34a;
-  --color-success-bg: #dcfce7;
-  --color-warning:    #f97316;
-  --color-warning-bg: #ffedd5;
-  --color-danger:     #dc2626;
-  --color-danger-bg:  #fee2e2;
-  --color-neutral:    #64748b;
-  --color-neutral-bg: #f1f5f9;
+  /* Semantic — SAP palette (przyciemnione, mniej "wow") */
+  --color-success:    #107e3e;
+  --color-success-bg: #ebf5ee;
+  --color-warning:    #e9730c;
+  --color-warning-bg: #fef2e6;
+  --color-danger:     #bb0000;
+  --color-danger-bg:  #ffebeb;
+  --color-neutral:    #6b778c;
+  --color-neutral-bg: #f4f5f7;
 
-  /* Topbar */
-  --topbar-bg:       #1e293b;
+  /* Topbar — głęboka navy Atlassian/SAP */
+  --topbar-bg:       #172b4d;
   --topbar-text:     #ffffff;
 
-  /* Tables */
-  --table-header-bg:   #1e40af;
-  --table-header-text: #ffffff;
-  --table-stripe:      #f8fafc;
-  --table-hover:       #f1f5f9;
+  /* Tables — header NEUTRALNY z ciemnym tekstem (SAP/Jira style),
+     nie pełen niebieski. Pod nim brand underline. */
+  --table-header-bg:   #f4f5f7;
+  --table-header-text: #172b4d;
+  --table-stripe:      #fafbfc;
+  --table-hover:       #f4f5f7;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
-  --shadow-md: 0 2px 8px rgba(15, 23, 42, .07);
-  --shadow-lg: 0 8px 24px rgba(15, 23, 42, .10);
+  /* Shadows — prawie niewidoczne (enterprise = flat) */
+  --shadow-sm: 0 1px 1px rgba(23, 43, 77, .04);
+  --shadow-md: 0 1px 3px rgba(23, 43, 77, .06);
+  --shadow-lg: 0 4px 12px rgba(23, 43, 77, .08);
 
-  /* Radius — industrial tool aesthetic: minimal rounding */
+  /* Radius — dominują proste krawędzie */
   --radius-sm: 2px;
   --radius-md: 3px;
   --radius-lg: 4px;
@@ -60,46 +61,46 @@
 }
 
 [data-theme="dark"] {
-  --bg-body:         #0f172a;
-  --bg-surface:      #1e293b;
-  --bg-elevated:     #334155;
-  --bg-muted:        #1e293b;
-  --bg-subtle:       #334155;
+  --bg-body:         #0b1423;
+  --bg-surface:      #172b4d;
+  --bg-elevated:     #1e3a5f;
+  --bg-muted:        #132440;
+  --bg-subtle:       #1e3a5f;
 
-  --text-primary:    #f1f5f9;
-  --text-secondary:  #cbd5e1;
-  --text-muted:      #94a3b8;
-  --text-inverted:   #0f172a;
+  --text-primary:    #e6ebf2;
+  --text-secondary:  #b3bac5;
+  --text-muted:      #7a869a;
+  --text-inverted:   #172b4d;
 
-  --border:          #334155;
-  --border-subtle:   #1e293b;
-  --border-strong:   #475569;
+  --border:          #253858;
+  --border-subtle:   #1e3a5f;
+  --border-strong:   #344563;
 
-  --brand-primary:       #3b82f6;
-  --brand-primary-dark:  #2563eb;
-  --brand-primary-hover: #60a5fa;
-  --brand-primary-bg:    rgba(59, 130, 246, .15);
+  --brand-primary:       #4c9aff;
+  --brand-primary-dark:  #2684ff;
+  --brand-primary-hover: #669df2;
+  --brand-primary-bg:    rgba(76, 154, 255, .12);
 
-  --color-success:    #22c55e;
-  --color-success-bg: rgba(34, 197, 94, .15);
-  --color-warning:    #fb923c;
-  --color-warning-bg: rgba(251, 146, 60, .15);
-  --color-danger:     #ef4444;
-  --color-danger-bg:  rgba(239, 68, 68, .15);
-  --color-neutral:    #94a3b8;
-  --color-neutral-bg: rgba(148, 163, 184, .15);
+  --color-success:    #3fbd65;
+  --color-success-bg: rgba(63, 189, 101, .12);
+  --color-warning:    #f5a623;
+  --color-warning-bg: rgba(245, 166, 35, .12);
+  --color-danger:     #ff5630;
+  --color-danger-bg:  rgba(255, 86, 48, .12);
+  --color-neutral:    #7a869a;
+  --color-neutral-bg: rgba(122, 134, 154, .12);
 
-  --topbar-bg:       #020617;
-  --topbar-text:     #f1f5f9;
+  --topbar-bg:       #091124;
+  --topbar-text:     #e6ebf2;
 
-  --table-header-bg:   #1e3a8a;
-  --table-header-text: #f1f5f9;
-  --table-stripe:      #1e293b;
-  --table-hover:       #334155;
+  --table-header-bg:   #132440;
+  --table-header-text: #e6ebf2;
+  --table-stripe:      #172b4d;
+  --table-hover:       #1e3a5f;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, .5);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, .6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, .45);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, .55);
 }
 
 /* ═══════════════════════════════════════════════════════════════ */

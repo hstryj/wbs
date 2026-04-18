@@ -402,38 +402,45 @@
   .tasks-panel .tbl-wrap { border: none; border-top: 1px solid var(--border); }
   .filters {
     display: flex;
-    gap: 4px;
+    gap: 0;
     flex-wrap: wrap;
+    border-bottom: 1px solid transparent;
   }
   .filter-btn {
     font-size: 12px;
     font-weight: 500;
-    padding: 4px 10px;
-    border-radius: var(--radius-sm);
+    padding: 6px 12px;
     background: transparent;
-    border: 1px solid var(--border);
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
     color: var(--text-secondary);
     cursor: pointer;
     font-family: inherit;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all .12s;
+    transition: color .12s, border-color .12s;
   }
-  .filter-btn:hover { background: var(--bg-muted); color: var(--text-primary); }
+  .filter-btn:hover { color: var(--text-primary); }
   .filter-btn.active {
-    background: var(--brand-primary-bg);
-    border-color: var(--brand-primary);
     color: var(--brand-primary-dark);
+    border-bottom-color: var(--brand-primary);
     font-weight: 600;
   }
   .filter-count {
-    font-size: 11px;
-    padding: 1px 6px;
+    font-size: 10px;
+    padding: 0 5px;
+    min-width: 18px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 8px;
-    background: var(--bg-muted);
-    color: var(--text-muted);
+    background: var(--border);
+    color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
+    font-weight: 600;
   }
   .filter-btn.active .filter-count { background: var(--brand-primary); color: #fff; }
 
@@ -465,20 +472,23 @@
   .cell-muted { color: var(--text-secondary); }
   .cell-num { text-align: right; font-variant-numeric: tabular-nums; }
 
-  /* Status badges */
+  /* Status badges — SAP/Jira style: subtle bg + colored text + 1px border */
   .status-badge {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: var(--radius-sm);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: .01em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    line-height: 1.4;
   }
-  .status-nowe       { background: var(--bg-muted); color: var(--text-secondary); border: 1px solid var(--border); }
-  .status-w-trakcie  { background: var(--brand-primary-bg); color: var(--brand-primary-dark); }
-  .status-opoznione  { background: var(--color-warning-bg); color: var(--color-warning); }
-  .status-krytyczne  { background: var(--color-danger-bg); color: var(--color-danger); }
-  .status-ukonczone  { background: var(--color-success-bg); color: var(--color-success); }
+  .status-nowe       { background: var(--bg-muted);           color: var(--text-secondary);    border-color: var(--border-strong); }
+  .status-w-trakcie  { background: var(--brand-primary-bg);    color: var(--brand-primary-dark); border-color: var(--brand-primary); }
+  .status-opoznione  { background: var(--color-warning-bg);    color: var(--color-warning);     border-color: var(--color-warning); }
+  .status-krytyczne  { background: var(--color-danger-bg);     color: var(--color-danger);      border-color: var(--color-danger); }
+  .status-ukonczone  { background: var(--color-success-bg);    color: var(--color-success);     border-color: var(--color-success); }
 
   /* Progress */
   .progress-wrap { display: flex; align-items: center; gap: 8px; }
