@@ -1,114 +1,7 @@
-/* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS — CSS custom properties
-   Light theme (default) + Dark theme (via [data-theme="dark"])
-   ═══════════════════════════════════════════════════════════════ */
-:root {
-  /* Surfaces */
-  --bg-body:         #f8fafc;
-  --bg-surface:      #ffffff;
-  --bg-elevated:     #ffffff;
-  --bg-muted:        #f1f5f9;
-  --bg-subtle:       #e2e8f0;
-
-  /* Text */
-  --text-primary:    #0f172a;
-  --text-secondary:  #475569;
-  --text-muted:      #94a3b8;
-  --text-inverted:   #ffffff;
-
-  /* Borders */
-  --border:          #e2e8f0;
-  --border-subtle:   #f1f5f9;
-  --border-strong:   #cbd5e1;
-
-  /* Brand (deep professional blue) */
-  --brand-primary:       #2563eb;
-  --brand-primary-dark:  #1e40af;
-  --brand-primary-hover: #1d4ed8;
-  --brand-primary-bg:    #dbeafe;
-
-  /* Semantic */
-  --color-success:    #16a34a;
-  --color-success-bg: #dcfce7;
-  --color-warning:    #f97316;
-  --color-warning-bg: #ffedd5;
-  --color-danger:     #dc2626;
-  --color-danger-bg:  #fee2e2;
-  --color-neutral:    #64748b;
-  --color-neutral-bg: #f1f5f9;
-
-  /* Topbar */
-  --topbar-bg:       #1e293b;
-  --topbar-text:     #ffffff;
-
-  /* Tables */
-  --table-header-bg:   #1e40af;
-  --table-header-text: #ffffff;
-  --table-stripe:      #f8fafc;
-  --table-hover:       #f1f5f9;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
-  --shadow-md: 0 2px 8px rgba(15, 23, 42, .07);
-  --shadow-lg: 0 8px 24px rgba(15, 23, 42, .10);
-
-  /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-}
-
-[data-theme="dark"] {
-  --bg-body:         #0f172a;
-  --bg-surface:      #1e293b;
-  --bg-elevated:     #334155;
-  --bg-muted:        #1e293b;
-  --bg-subtle:       #334155;
-
-  --text-primary:    #f1f5f9;
-  --text-secondary:  #cbd5e1;
-  --text-muted:      #94a3b8;
-  --text-inverted:   #0f172a;
-
-  --border:          #334155;
-  --border-subtle:   #1e293b;
-  --border-strong:   #475569;
-
-  --brand-primary:       #3b82f6;
-  --brand-primary-dark:  #2563eb;
-  --brand-primary-hover: #60a5fa;
-  --brand-primary-bg:    rgba(59, 130, 246, .15);
-
-  --color-success:    #22c55e;
-  --color-success-bg: rgba(34, 197, 94, .15);
-  --color-warning:    #fb923c;
-  --color-warning-bg: rgba(251, 146, 60, .15);
-  --color-danger:     #ef4444;
-  --color-danger-bg:  rgba(239, 68, 68, .15);
-  --color-neutral:    #94a3b8;
-  --color-neutral-bg: rgba(148, 163, 184, .15);
-
-  --topbar-bg:       #020617;
-  --topbar-text:     #f1f5f9;
-
-  --table-header-bg:   #1e3a8a;
-  --table-header-text: #f1f5f9;
-  --table-stripe:      #1e293b;
-  --table-hover:       #334155;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, .5);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, .6);
-}
-
-/* ═══════════════════════════════════════════════════════════════ */
-
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:var(--text-primary);background:var(--bg-body);transition:background .25s ease,color .25s ease}
+/* Layout */
 .wrap{max-width:1400px;margin:0 auto;padding:16px}
-.topbar{background:var(--topbar-bg);color:var(--topbar-text);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius-lg) var(--radius-lg) 0 0;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow-sm)}
-.topbar h1{font-size:16px;font-weight:700;letter-spacing:-0.01em}
+.topbar{background:var(--topbar-bg);color:var(--topbar-text);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius-md) var(--radius-md) 0 0;flex-wrap:wrap;gap:10px}
+.topbar h1{font-size:15px;font-weight:600;letter-spacing:-0.005em}
 .pill{background:rgba(255,255,255,.18);border-radius:var(--radius-md);padding:6px 16px;font-size:13px;font-weight:700;white-space:nowrap}
 .toolbar{display:flex;gap:8px;padding:10px 16px;background:var(--bg-surface);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
 .sep{width:1px;height:24px;background:var(--border);margin:0 2px}
@@ -129,9 +22,9 @@ body{font-family:Arial,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fo
 .warn-ok{color:var(--color-success);background:var(--color-success-bg);border-color:var(--color-success)}
 /* tabs */
 .view-tabs{display:flex;background:var(--bg-muted);border-bottom:1px solid var(--border);overflow-x:auto}
-.view-tab{padding:11px 17px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text-secondary);border-bottom:3px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;transition:color .15s,background .15s,border-color .15s}
-.view-tab:hover{color:var(--brand-primary);background:var(--brand-primary-bg)}
-.view-tab.active{color:var(--brand-primary);border-bottom-color:var(--brand-primary);background:var(--bg-surface);font-weight:700}
+.view-tab{padding:9px 16px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;transition:color .12s,background .12s,border-color .12s}
+.view-tab:hover{color:var(--text-primary);background:var(--bg-subtle)}
+.view-tab.active{color:var(--brand-primary-dark);border-bottom-color:var(--brand-primary);background:var(--bg-surface);font-weight:600}
 /* people */
 .people-panel{background:var(--bg-surface);border:1px solid var(--border);border-top:none;overflow:hidden;transition:max-height .3s ease}
 .people-panel.open{max-height:500px}.people-panel.shut{max-height:0;border-bottom:none}
@@ -189,24 +82,23 @@ input.iresp-txt:focus{outline:2px solid #2E75B6;outline-offset:-2px;background:#
 .add-inline{display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;color:#7a92ad;font-size:11px;font-weight:600;border-radius:4px;margin:2px 4px}
 .add-inline:hover{background:#e8f3fb;color:#1a5094}
 /* DASHBOARD */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:26px}
-.kpi-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;transition:transform .15s ease,box-shadow .15s ease;overflow:hidden}
-.kpi-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--color-neutral);border-radius:var(--radius-lg) 0 0 var(--radius-lg)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+.kpi-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;position:relative;overflow:hidden}
+.kpi-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-neutral)}
 .kpi-card.kpi-success::before{background:var(--color-success)}
 .kpi-card.kpi-info::before{background:var(--brand-primary)}
 .kpi-card.kpi-warning::before{background:var(--color-warning)}
 .kpi-card.kpi-danger::before{background:var(--color-danger)}
-.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.kpi-label{font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
-.kpi-value{font-size:30px;font-weight:700;line-height:1.05;letter-spacing:-0.02em}
-.kpi-sub{font-size:11px;color:var(--text-muted);margin-top:5px}
-.sp-item{margin-bottom:10px}
-.sp-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
-.sp-name{font-weight:600;color:var(--text-primary);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpi-label{font-size:11px;color:var(--text-secondary);font-weight:500;margin-bottom:4px}
+.kpi-value{font-size:22px;font-weight:700;line-height:1.1;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.sp-item{margin-bottom:8px}
+.sp-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.sp-name{font-weight:500;color:var(--text-primary);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sp-val{color:var(--text-secondary);font-size:11px;font-variant-numeric:tabular-nums}
-.sp-bar{background:var(--bg-muted);border-radius:6px;height:10px;overflow:hidden}
-.sp-fill{height:10px;border-radius:6px;transition:width .3s ease}
-.ds-h{font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.04em}
+.sp-bar{background:var(--bg-muted);border-radius:var(--radius-sm);height:8px;overflow:hidden}
+.sp-fill{height:8px;border-radius:var(--radius-sm);transition:width .3s ease}
+.ds-h{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 /* TREE */
 .chart-toolbar{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--bg-muted);border-bottom:1px solid var(--border);flex-wrap:wrap}
 .chart-toolbar label{font-size:11px;color:var(--text-secondary);font-weight:600}
@@ -758,257 +650,3 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
 .wl-sub-row-h{font-weight:700;color:#1F3864;white-space:nowrap}
 .wl-sub-row-h.zero{color:#bbb;font-weight:400}
 
-/* ============================================================
-   MOBILE — Etap 1: fundament (foundations)
-   Celowo nadpisuje tylko na wąskich ekranach, desktop bez zmian.
-   ============================================================ */
-
-/* Zapobiega auto-zoom na iOS przy kliknięciu w input (wymaga ≥16px) */
-@media (max-width: 900px) {
-  input, select, textarea { font-size: 16px !important; }
-}
-
-/* Tablet / duży telefon w landscape */
-@media (max-width: 900px) {
-  body { font-size: 14px; }
-  .wrap { padding: 8px; max-width: 100%; }
-
-  .topbar { padding: 10px 12px; border-radius: 0; }
-  .topbar h1 { font-size: 15px; }
-  .pill { font-size: 12px; padding: 4px 10px; }
-
-  .toolbar { padding: 8px; gap: 8px; }
-  .toolbar .sep { display: none; }
-  .warn-bar { margin-left: 0; width: 100%; text-align: center; font-size: 12px; }
-
-  .view-tabs { -webkit-overflow-scrolling: touch; }
-  .view-tab { padding: 12px 14px; font-size: 13px; min-height: 44px; }
-
-  .inner-pane { padding: 14px 12px; }
-  .people-inner { padding: 12px 14px; }
-  .add-person-form { flex-direction: column; align-items: stretch; }
-  .add-person-form input { width: 100%; }
-
-  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-  .kpi-card { padding: 12px 14px; }
-  .kpi-value { font-size: 22px; }
-  .kpi-label { font-size: 12px; }
-
-  .modal-box, .modal-box2 { max-width: 96vw; width: 96vw; }
-  .modal-body { padding: 14px; }
-  .modal-footer { padding: 10px 14px; flex-wrap: wrap; }
-}
-
-/* Telefon w portrait */
-@media (max-width: 600px) {
-  .kpi-grid { grid-template-columns: 1fr; }
-
-  /* Większe touch targety — minimum ~44px zalecane przez Apple/Google */
-  .btn { min-height: 42px; padding: 10px 14px; font-size: 13px; }
-  .btn-add-child, .btn-del, .btn-tog { min-height: 36px; padding: 8px 10px; }
-
-  .view-tab { padding: 14px 16px; font-size: 13px; }
-
-  /* Sugestia wizualna: tabela przewija się poziomo */
-  .tbl-wrap { position: relative; }
-  .tbl-wrap::after {
-    content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 20px;
-    background: linear-gradient(90deg, transparent, rgba(0,0,0,.06));
-    pointer-events: none;
-  }
-}
-
-/* Bardzo małe telefony (iPhone SE itp.) */
-@media (max-width: 380px) {
-  .wrap { padding: 4px; }
-  .topbar { padding: 8px 10px; }
-  .topbar h1 { font-size: 14px; }
-  .inner-pane { padding: 12px 8px; }
-}
-
-/* ============================================================
-   MOBILE — Etap 2a: TABELE (WBS / Ranking / Ryzyka)
-   Sticky pierwsza kolumna + większe tap targety + stackowanie formularzy
-   ============================================================ */
-@media (max-width: 768px) {
-  /* Sticky pierwsza kolumna — punkt zaczepienia przy poziomym scrollu */
-  table.main thead th:first-child,
-  table.main tbody td:first-child,
-  table.rank thead th:first-child,
-  table.rank tbody td:first-child,
-  table.risk thead th:first-child,
-  table.risk tbody td:first-child {
-    position: sticky;
-    left: 0;
-    background-color: inherit;
-    z-index: 2;
-    box-shadow: 2px 0 0 rgba(0,0,0,.06);
-  }
-  /* Nagłówki sticky muszą być nad body */
-  table.main thead th:first-child { background-color: #2E75B6; z-index: 3; }
-  table.rank thead th:first-child,
-  table.risk thead th:first-child { background-color: #1F3864; z-index: 3; }
-  table.main tfoot td:first-child {
-    position: sticky; left: 0; background-color: #1a3057; z-index: 2;
-  }
-  /* Wiersze bez inline bg (rank/risk): explicit bg dla sticky */
-  table.rank tbody tr td:first-child { background-color: #fff; }
-  table.rank tr:nth-child(even) td:first-child { background-color: #f4f8fc; }
-  table.rank tr:hover td:first-child { background-color: #e8f3fb; }
-  table.risk tbody tr td:first-child { background-color: #fff; }
-  table.risk tr:nth-child(even) td:first-child { background-color: #f4f8fc; }
-  table.risk tr:hover td:first-child { background-color: #e8f3fb; }
-
-  /* Większe cele dotykowe wewnątrz komórek tabeli */
-  table.main input.inum,
-  table.main input.iname,
-  table.main input.iresp-txt,
-  table.main select.iresp { padding: 10px 6px; }
-  table.main input[type="date"] { padding: 8px 4px !important; width: 100% !important; }
-  table.main select { min-height: 36px; }
-
-  /* Formularz dodawania ryzyka: stackowane pionowo, pełna szerokość */
-  .risk-add-form {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-  .risk-add-form input,
-  .risk-add-form select,
-  .risk-add-form button {
-    width: 100% !important;
-    min-width: 0 !important;
-    flex: none !important;
-  }
-  .risk-add-form button { min-height: 44px; }
-
-  /* Ctrl bars (sort/filter) — lepsze stackowanie */
-  .ctrl-bar {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .ctrl-bar select { min-height: 38px; flex: 1; min-width: 140px; }
-}
-
-/* ============================================================
-   MOBILE — Etap 2b: ZESPÓŁ / RAPORT GODZIN / ZAMÓWIENIA
-   ============================================================ */
-@media (max-width: 768px) {
-
-  /* ── ZESPÓŁ: karty ── */
-  .team-grid { gap: 10px; }
-  .team-card { padding: 12px 14px; }
-  .tc-hdr { gap: 12px; }
-  .tc-av { width: 40px; height: 40px; font-size: 14px; }
-  .tc-name { font-size: 14px; }
-  .tc-meta { font-size: 12px; }
-  .tc-task { font-size: 12px; padding: 6px 0; }
-  .tc-code { font-size: 11px; min-width: 52px; }
-  .tc-pct { font-size: 12px; min-width: 40px; }
-  /* przyciski akcji w karcie zespołu — większe tap targety */
-  .tc-docs-btn,
-  .tc-wl-open { min-height: 40px; font-size: 12px !important; padding: 10px 8px !important; }
-  .tc-foot > div:last-child { gap: 8px !important; padding: 8px 10px 10px !important; }
-
-  /* ── RAPORT GODZIN: panele ── */
-  .wlrg-panel { padding: 12px; }
-  .wlrg-panel h4 { font-size: 14px; }
-
-  /* Taby w raporcie godzin — scrollowalne poziomo */
-  .wlrg-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; flex-wrap: nowrap; }
-  .wlrg-tab { padding: 11px 14px; font-size: 13px; flex-shrink: 0; min-height: 44px; }
-
-  /* Wiersz formularza (Tydzień / Miesiąc / Zakres / Zadania) — stackowanie */
-  .wlrg-row { flex-direction: column; align-items: stretch; gap: 8px; }
-  .wlrg-row label { min-width: 0; margin-bottom: 2px; }
-  .wlrg-row select,
-  .wlrg-row input[type=date],
-  .wlrg-row input[type=week] { width: 100%; min-height: 42px; padding: 10px 12px; }
-  .wlrg-gen-btn,
-  .wlrg-pdf-btn { width: 100%; padding: 12px 14px; font-size: 14px; margin-left: 0 !important; min-height: 44px; }
-
-  /* Filtry sumarycznego panelu godzin (Cały zespół / Grupa / Osoba) */
-  .wl-live-filter { flex-direction: column; align-items: stretch; }
-  .wl-live-filter select { width: 100%; min-width: 0; min-height: 42px; padding: 10px 12px; }
-  .wl-live-filter-sep { display: none; }
-
-  /* Grid podsumowania godzin per punkt WBS — 1 kolumna */
-  .wl-live-sum-grid { grid-template-columns: 1fr; }
-
-  /* ── ZAMÓWIENIA: tabele w #ord-body mają inline style, zapewniamy scroll ── */
-  #ord-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  #ord-body > table { min-width: 640px; }
-  /* Sub-tab bar w orders (inline flex) — zapewniamy scroll poziomy */
-  #orders-root > div:first-child { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
-  #orders-root > div:first-child > button { flex-shrink: 0; min-height: 44px; }
-  /* Pasek nad tabelą materiałów (search + add) — stack */
-  #ord-body > div:first-child { flex-direction: column; align-items: stretch !important; gap: 8px; }
-  #ord-body > div:first-child > input { width: 100% !important; min-height: 42px; padding: 10px 12px !important; }
-  #ord-body > div:first-child > button { width: 100% !important; min-height: 44px; padding: 12px 16px !important; }
-
-  /* ── PANEL KOLUMN: większe tap targety, panel pomieści wszystkie 3 rzędy ── */
-  .col-panel.open { max-height: 260px; }
-  .col-panel-inner { padding: 10px 12px; gap: 8px; }
-  .col-panel-inner label {
-    padding: 10px 14px;
-    min-height: 40px;
-    font-size: 13px;
-    flex: 1 1 calc(50% - 8px);
-  }
-  .col-panel-inner input[type=checkbox] {
-    width: 18px;
-    height: 18px;
-    min-width: 18px;
-  }
-
-  /* ── NAGŁÓWEK PROJEKTU: sticky przy lewej krawędzi viewportu + wrap ── */
-  /* żeby przycisk "Dodaj" nie chował się za horyzontalny scroll tabeli */
-  .proj-hdr {
-    position: sticky;
-    left: 0;
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    box-sizing: border-box;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px 10px;
-  }
-  .proj-hdr .proj-title-inp {
-    flex: 1 1 100%;
-    order: 1;
-    font-size: 15px;
-    padding: 6px 8px;
-  }
-  /* toggle (▼/▶) — pierwszy, obok tytułu */
-  .proj-hdr > .btn-tog { order: 0; }
-  /* pasek postępu i meta — drugi rząd */
-  .proj-hdr > div:not(.proj-title-inp) { order: 2; }
-  .proj-hdr-meta { order: 3; }
-  /* przyciski Dodaj/✕ — ostatni rząd, większe */
-  .proj-hdr .btn-add-child { order: 4; min-height: 38px; padding: 8px 14px; font-size: 12px; }
-  .proj-hdr .btn-del { order: 5; min-height: 38px; padding: 8px 14px; }
-
-  /* Add-inline pod ostatnim projektem też sticky żeby był widoczny */
-  .add-row td .add-inline,
-  tr[style*="#253a5a"] .add-inline {
-    position: sticky;
-    left: 0;
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    box-sizing: border-box;
-    padding: 10px 10px;
-    min-height: 40px;
-  }
-
-  /* ── GANTT: przełącznik + karty ── */
-  .gantt-mode-toggle { order: -1; width: 100%; }
-  .gantt-mode-btn { flex: 1; padding: 11px 10px; font-size: 13px; min-height: 44px; }
-  .gantt-list { padding: 8px; max-height: none; }
-  .gc-card { padding: 12px; }
-  .gc-name { font-size: 14px; }
-  .gc-code { font-size: 12px; }
-  .gc-dates { font-size: 12px; }
-  .gc-status { font-size: 12px; }
-  .gc-pct { font-size: 13px; min-width: 46px; }
-  .gc-meta { font-size: 12px; }
-}

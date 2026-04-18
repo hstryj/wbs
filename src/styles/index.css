@@ -1,0 +1,11 @@
+/* ═══════════════════════════════════════════════════════════════
+   Entry point for all app styles.
+   Kolejność ma znaczenie: tokens definiują zmienne CSS, base
+   ustawia font + reset, components rysują elementy, mobile
+   nadpisuje na wąskich ekranach.
+   ═══════════════════════════════════════════════════════════════ */
+
+@import './tokens.css';
+@import './base.css';
+@import './components.css';
+@import './mobile.css';

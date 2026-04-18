@@ -70,8 +70,7 @@ export interface Snapshot {
   overall: string | number;
 }
 
-/** Worklog: { personName: { 'YYYY-Wnn': { dayNum: hours } } } */
-export type Worklog = Record<string, Record<string, Record<number, number>>>;
+/* Worklog type lives w src/lib/state/worklog.ts (ma bogatszy kształt z WlDay). */
 
 export type TabName =
   | 'table' | 'dash' | 'chart' | 'wfall' | 'team' | 'rank'
