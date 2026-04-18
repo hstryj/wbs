@@ -753,6 +753,63 @@ td[data-col="whours"]:hover{background:#e8f3fb!important}
   }
   .ctrl-bar select { min-height: 38px; flex: 1; min-width: 140px; }
 }
+
+/* ============================================================
+   MOBILE — Etap 2b: ZESPÓŁ / RAPORT GODZIN / ZAMÓWIENIA
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* ── ZESPÓŁ: karty ── */
+  .team-grid { gap: 10px; }
+  .team-card { padding: 12px 14px; }
+  .tc-hdr { gap: 12px; }
+  .tc-av { width: 40px; height: 40px; font-size: 14px; }
+  .tc-name { font-size: 14px; }
+  .tc-meta { font-size: 12px; }
+  .tc-task { font-size: 12px; padding: 6px 0; }
+  .tc-code { font-size: 11px; min-width: 52px; }
+  .tc-pct { font-size: 12px; min-width: 40px; }
+  /* przyciski akcji w karcie zespołu — większe tap targety */
+  .tc-docs-btn,
+  .tc-wl-open { min-height: 40px; font-size: 12px !important; padding: 10px 8px !important; }
+  .tc-foot > div:last-child { gap: 8px !important; padding: 8px 10px 10px !important; }
+
+  /* ── RAPORT GODZIN: panele ── */
+  .wlrg-panel { padding: 12px; }
+  .wlrg-panel h4 { font-size: 14px; }
+
+  /* Taby w raporcie godzin — scrollowalne poziomo */
+  .wlrg-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; flex-wrap: nowrap; }
+  .wlrg-tab { padding: 11px 14px; font-size: 13px; flex-shrink: 0; min-height: 44px; }
+
+  /* Wiersz formularza (Tydzień / Miesiąc / Zakres / Zadania) — stackowanie */
+  .wlrg-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .wlrg-row label { min-width: 0; margin-bottom: 2px; }
+  .wlrg-row select,
+  .wlrg-row input[type=date],
+  .wlrg-row input[type=week] { width: 100%; min-height: 42px; padding: 10px 12px; }
+  .wlrg-gen-btn,
+  .wlrg-pdf-btn { width: 100%; padding: 12px 14px; font-size: 14px; margin-left: 0 !important; min-height: 44px; }
+
+  /* Filtry sumarycznego panelu godzin (Cały zespół / Grupa / Osoba) */
+  .wl-live-filter { flex-direction: column; align-items: stretch; }
+  .wl-live-filter select { width: 100%; min-width: 0; min-height: 42px; padding: 10px 12px; }
+  .wl-live-filter-sep { display: none; }
+
+  /* Grid podsumowania godzin per punkt WBS — 1 kolumna */
+  .wl-live-sum-grid { grid-template-columns: 1fr; }
+
+  /* ── ZAMÓWIENIA: tabele w #ord-body mają inline style, zapewniamy scroll ── */
+  #ord-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #ord-body > table { min-width: 640px; }
+  /* Sub-tab bar w orders (inline flex) — zapewniamy scroll poziomy */
+  #orders-root > div:first-child { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
+  #orders-root > div:first-child > button { flex-shrink: 0; min-height: 44px; }
+  /* Pasek nad tabelą materiałów (search + add) — stack */
+  #ord-body > div:first-child { flex-direction: column; align-items: stretch !important; gap: 8px; }
+  #ord-body > div:first-child > input { width: 100% !important; min-height: 42px; padding: 10px 12px !important; }
+  #ord-body > div:first-child > button { width: 100% !important; min-height: 44px; padding: 12px 16px !important; }
+}
 </style>
 </head>
 <body>
