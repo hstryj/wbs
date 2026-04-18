@@ -1,43 +1,21 @@
 <script lang="ts">
   import { tree } from '../lib/state/tree';
-  import { assignCodes, collectLeaves, nodeDonePct, rootWeightSum, rootWeightedSum } from '../lib/utils/wbs';
-  import SegmentedBar from '../components/SegmentedBar.svelte';
   import { activeTab } from '../lib/state/ui';
+  import { projectMeta, fmtPln } from '../lib/state/project';
+  import {
+    assignCodes, collectLeaves, nodeDonePct,
+    rootWeightSum, rootWeightedSum,
+    taskStatus, TASK_STATUS_LABEL, findSectionName,
+    type TaskStatus
+  } from '../lib/utils/wbs';
+  import { todayISO } from '../lib/utils/dates';
   import type { WbsNode, TabName } from '../lib/types';
 
   $: ($tree, assignCodes($tree));
+  $: today = todayISO();
   $: leaves = collectLeaves($tree);
 
-  $: rw = rootWeightSum($tree);
-  $: rwtd = rootWeightedSum($tree);
-  $: tot = rw > 0 ? (rwtd / rw) * 100 : 0;
-
-  $: today = new Date().toISOString().slice(0, 10);
-
-  $: done100 = leaves.filter((n) => (n.done || 0) >= 100).length;
-  $: doneIP  = leaves.filter((n) => (n.done || 0) > 0 && (n.done || 0) < 100).length;
-  $: done0   = leaves.filter((n) => (n.done || 0) === 0).length;
-  $: unass   = leaves.filter((n) => !n.resp).length;
-  $: crit    = leaves.filter((n) => n.priority === 'Krytyczny' && (n.done || 0) < 100).length;
-  $: ragR    = leaves.filter((n) => n.rag === 'R').length;
-  $: overdue = leaves.filter((n) => n.dateEnd && n.dateEnd < today && (n.done || 0) < 100).length;
-  $: totalMD = leaves.reduce((a, n) => a + (n.md || 0), 0);
-  $: doneMD  = leaves.reduce((a, n) => a + (n.md || 0) * (n.done || 0) / 100, 0);
-
-  // "Brak osób przypisanych: w X sekcjach" — count distinct top-level sections with any unassigned leaf
-  $: sectionsWithUnassigned = (() => {
-    let count = 0;
-    for (const root of $tree) {
-      const nodes = root.isProject ? root.children : [root];
-      for (const sec of nodes) {
-        const secLeaves = collectLeaves([sec]);
-        if (secLeaves.some((n) => !n.resp)) count++;
-      }
-    }
-    return count;
-  })();
-
-  // Sections for segmented bar (flattened top-level sections, not project roots)
+  // ── Section progress ────────────────────────────────────────────
   $: sections = (() => {
     const out: { label: string; weight: number; done: number }[] = [];
     for (const root of $tree) {
@@ -53,94 +31,124 @@
     return out;
   })();
 
-  $: critItems = leaves.filter((n) => n.priority === 'Krytyczny' && (n.done || 0) < 100).slice(0, 8);
+  // ── Summary metrics ────────────────────────────────────────────
+  $: rw = rootWeightSum($tree);
+  $: rwtd = rootWeightedSum($tree);
+  $: overall = rw > 0 ? (rwtd / rw) * 100 : 0;
 
-  function jumpTo(tab: TabName) {
-    activeTab.set(tab);
+  $: overdue = leaves.filter((n) => n.dateEnd && n.dateEnd < today && (n.done || 0) < 100).length;
+  $: critical = leaves.filter((n) => n.priority === 'Krytyczny' && (n.done || 0) < 100).length;
+  $: ragR = leaves.filter((n) => n.rag === 'R').length;
+  $: unassigned = leaves.filter((n) => !n.resp).length;
+
+  $: sectionsWithUnassigned = (() => {
+    let count = 0;
+    for (const root of $tree) {
+      const nodes = root.isProject ? root.children : [root];
+      for (const sec of nodes) {
+        const secLeaves = collectLeaves([sec]);
+        if (secLeaves.some((n) => !n.resp)) count++;
+      }
+    }
+    return count;
+  })();
+
+  $: critPct = leaves.length > 0 ? (critical / leaves.length) * 100 : 0;
+
+  // ── Task table ─────────────────────────────────────────────────
+  type StatusFilter = 'all' | TaskStatus;
+  let statusFilter: StatusFilter = 'all';
+
+  $: enrichedLeaves = leaves.map((n) => ({
+    node: n,
+    status: taskStatus(n, today),
+    section: findSectionName($tree, n.id)
+  }));
+
+  $: filteredTasks = statusFilter === 'all'
+    ? enrichedLeaves
+    : enrichedLeaves.filter((t) => t.status === statusFilter);
+
+  const STATUS_ORDER: StatusFilter[] = ['all', 'opoznione', 'krytyczne', 'w-trakcie', 'nowe', 'ukonczone'];
+  const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
+    'all':       'Wszystkie',
+    'nowe':      'Nowe',
+    'w-trakcie': 'W trakcie',
+    'opoznione': 'Opóźnione',
+    'krytyczne': 'Krytyczne',
+    'ukonczone': 'Ukończone'
+  };
+
+  function statusCount(s: StatusFilter): number {
+    if (s === 'all') return enrichedLeaves.length;
+    return enrichedLeaves.filter((t) => t.status === s).length;
   }
 
-  // Text colors (semantic only)
-  function accent(v: number, kind: 'more-is-bad' | 'more-is-good'): string {
-    if (v === 0) return kind === 'more-is-bad' ? 'var(--color-success)' : 'var(--text-muted)';
-    return kind === 'more-is-bad' ? (v >= 3 ? 'var(--color-danger)' : 'var(--color-warning)') : 'var(--brand-primary)';
+  function jumpTo(tab: TabName) { activeTab.set(tab); }
+
+  function fmtDate(iso?: string): string {
+    if (!iso) return '—';
+    // "2026-06-24" → "24 cze"
+    const months = ['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.getDate() + ' ' + months[d.getMonth()];
+  }
+
+  function daysLeftText(end?: string): string {
+    if (!end) return '';
+    const d = Math.ceil((new Date(end).getTime() - new Date(today).getTime()) / 86400000);
+    if (d < 0) return `(${-d} dn po)`;
+    if (d === 0) return '(dziś)';
+    return `(za ${d} dn)`;
   }
 </script>
 
 <div class="inner-pane dash-root">
-  <!-- ── Overview strip ────────────────────────────────────────── -->
-  <section class="dash-hero">
-    <div class="hero-left">
-      <div class="hero-label">Zaawansowanie ogólne projektu</div>
-      <div class="hero-value">{tot.toFixed(1)}<span class="hero-unit">%</span></div>
-      <div class="hero-sub">
-        <strong>{rwtd.toFixed(1)}%</strong> ważone · <strong>{rw.toFixed(1)}%</strong> suma wag · <strong>{leaves.length}</strong> zadań
-      </div>
-    </div>
-    <div class="hero-right">
-      <div class="stat">
-        <div class="stat-label">Ukończone</div>
-        <div class="stat-value">{done100} <span class="stat-total">/ {leaves.length}</span></div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">W trakcie</div>
-        <div class="stat-value">{doneIP}</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Nie rozpoczęte</div>
-        <div class="stat-value">{done0}</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Estymacja (MD)</div>
-        <div class="stat-value">{totalMD.toFixed(1)}<span class="stat-total"> / {doneMD.toFixed(1)} wyk.</span></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── Two-column: Attention + Sections progress ────────────── -->
+  <!-- ── Two-column: Attention + Sections progress ─────────────── -->
   <div class="dash-grid">
-    <!-- Left: attention panel -->
     <section class="panel">
       <header class="panel-hdr">
         <h2>Co wymaga uwagi dzisiaj?</h2>
       </header>
 
-      <button class="alert-row alert-row-btn" on:click={() => jumpTo('rank')} type="button">
-        <div class="alert-label">Opóźnione zadania</div>
-        <div class="alert-count" style="color:{accent(overdue, 'more-is-bad')}">{overdue}</div>
-        <span class="alert-tag" style="background:{overdue > 0 ? 'var(--color-warning-bg)' : 'var(--color-success-bg)'};color:{overdue > 0 ? 'var(--color-warning)' : 'var(--color-success)'}">
+      <button class="alert-row" on:click={() => { statusFilter = 'opoznione'; }} type="button">
+        <span class="alert-label">Opóźnione zadania</span>
+        <span class="alert-count" class:is-bad={overdue > 0}>{overdue}</span>
+        <span class="alert-tag tag-{overdue > 0 ? 'warn' : 'ok'}">
           {overdue > 0 ? 'po terminie' : 'brak'}
         </span>
       </button>
 
-      <button class="alert-row alert-row-btn" on:click={() => jumpTo('rank')} type="button">
-        <div class="alert-label">Zadania krytyczne (nieukończone)</div>
-        <div class="alert-count" style="color:{accent(crit, 'more-is-bad')}">{crit}</div>
-        <span class="alert-tag" style="background:{crit > 0 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)'};color:{crit > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">
-          {crit > 0 ? 'pilne' : 'brak'}
+      <button class="alert-row" on:click={() => { statusFilter = 'krytyczne'; }} type="button">
+        <span class="alert-label">Zadania krytyczne</span>
+        <span class="alert-count" class:is-bad={critical > 0}>{critical}</span>
+        <span class="alert-tag tag-{critical > 0 ? 'danger' : 'ok'}">
+          {critical > 0 ? 'pilne' : 'brak'}
         </span>
       </button>
 
-      <button class="alert-row alert-row-btn" on:click={() => jumpTo('risk')} type="button">
-        <div class="alert-label">Zadania Red (RAG)</div>
-        <div class="alert-count" style="color:{accent(ragR, 'more-is-bad')}">{ragR}</div>
-        <span class="alert-tag" style="background:{ragR > 0 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)'};color:{ragR > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">
+      <button class="alert-row" on:click={() => jumpTo('risk')} type="button">
+        <span class="alert-label">Zadania Red (RAG)</span>
+        <span class="alert-count" class:is-bad={ragR > 0}>{ragR}</span>
+        <span class="alert-tag tag-{ragR > 0 ? 'danger' : 'ok'}">
           {ragR > 0 ? 'ryzyko' : 'brak'}
         </span>
       </button>
 
-      <button class="alert-row alert-row-btn" on:click={() => jumpTo('team')} type="button">
-        <div class="alert-label">Brak osób przypisanych</div>
-        <div class="alert-count" style="color:{accent(unass, 'more-is-bad')}">{unass}</div>
-        <span class="alert-tag" style="background:{sectionsWithUnassigned > 0 ? 'var(--color-warning-bg)' : 'var(--color-success-bg)'};color:{sectionsWithUnassigned > 0 ? 'var(--color-warning)' : 'var(--color-success)'}">
+      <button class="alert-row" on:click={() => jumpTo('team')} type="button">
+        <span class="alert-label">Brak osób przypisanych</span>
+        <span class="alert-count" class:is-bad={unassigned > 0}>{unassigned}</span>
+        <span class="alert-tag tag-{sectionsWithUnassigned > 0 ? 'warn' : 'ok'}">
           {sectionsWithUnassigned > 0 ? `w ${sectionsWithUnassigned} sekcjach` : 'wszystko obsadzone'}
         </span>
       </button>
     </section>
 
-    <!-- Right: section progress -->
     <section class="panel">
       <header class="panel-hdr">
         <h2>Zaawansowanie sekcji głównych</h2>
+        <span class="panel-meta">{overall.toFixed(1)}% ogółem</span>
       </header>
 
       {#if !sections.length}
@@ -167,227 +175,205 @@
     </section>
   </div>
 
-  <!-- ── Critical tasks table (if any) ───────────────────────── -->
-  {#if critItems.length}
-    <section class="panel panel-danger" style="margin-top:24px">
-      <header class="panel-hdr">
-        <h2 style="color:var(--color-danger)">Zadania krytyczne do ukończenia</h2>
-        <button class="link-btn" on:click={() => jumpTo('rank')} type="button">Zobacz wszystkie →</button>
-      </header>
+  <!-- ── Tasks table ─────────────────────────────────────────── -->
+  <section class="panel tasks-panel">
+    <header class="panel-hdr">
+      <h2>Zadania</h2>
+      <div class="filters">
+        {#each STATUS_ORDER as s}
+          {@const count = statusCount(s)}
+          <button
+            class="filter-btn"
+            class:active={statusFilter === s}
+            on:click={() => (statusFilter = s)}
+            type="button"
+          >
+            {STATUS_FILTER_LABELS[s]}
+            <span class="filter-count">{count}</span>
+          </button>
+        {/each}
+      </div>
+    </header>
 
-      <div class="tbl-wrap" style="border-radius:var(--radius-md);border-top:1px solid var(--border)">
-        <table class="rank">
-          <thead>
-            <tr>
-              <th style="width:86px">Kod</th>
-              <th>Zadanie</th>
-              <th style="width:110px">Odpowiedzialny</th>
-              <th style="width:110px">Termin</th>
-              <th style="width:90px;text-align:center">Postęp</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each critItems as n}
-              {@const over = n.dateEnd && n.dateEnd < today && (n.done || 0) < 100}
+    <div class="tbl-wrap">
+      <table class="rank">
+        <thead>
+          <tr>
+            <th style="width:86px">Zadanie</th>
+            <th style="width:120px">Status</th>
+            <th style="width:160px">Odpowiedzialny</th>
+            <th style="width:120px">Termin</th>
+            <th style="width:110px">Postęp</th>
+            <th style="width:90px">Koszt</th>
+            <th>Sekcja</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#if !filteredTasks.length}
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">
+              {enrichedLeaves.length === 0
+                ? 'Brak zadań. Dodaj je w Edytorze WBS.'
+                : 'Brak zadań w tym statusie.'}
+            </td></tr>
+          {:else}
+            {#each filteredTasks.slice(0, 12) as t}
+              {@const n = t.node}
+              {@const progressColor = (n.done || 0) >= 100 ? 'var(--color-success)' :
+                                      (n.done || 0) >= 50 ? 'var(--brand-primary)' :
+                                      (n.done || 0) > 0 ? 'var(--color-warning)' :
+                                      'var(--color-neutral)'}
               <tr>
-                <td><span style="font-family:'Courier New',monospace;font-size:10px;color:var(--text-muted)">{n._code ?? ''}</span></td>
-                <td style="font-weight:600;color:var(--text-primary)">{n.name || '–'}</td>
-                <td style="color:var(--text-secondary)">{n.resp || '—'}</td>
-                <td style="color:{over ? 'var(--color-danger)' : 'var(--text-secondary)'};font-weight:{over ? 700 : 400}">{n.dateEnd || '—'}{over ? ' ⚠' : ''}</td>
-                <td style="text-align:center;font-weight:700;color:var(--brand-primary)">{n.done || 0}%</td>
+                <td>
+                  <div class="task-code">{n._code ?? ''}</div>
+                  <div class="task-name" title={n.name}>{n.name || '—'}</div>
+                </td>
+                <td>
+                  <span class="status-badge status-{t.status}">{TASK_STATUS_LABEL[t.status]}</span>
+                </td>
+                <td class="cell-muted">{n.resp || '—'}</td>
+                <td class="cell-muted">
+                  {fmtDate(n.dateEnd)}
+                  {#if n.dateEnd}
+                    <span class="task-days">{daysLeftText(n.dateEnd)}</span>
+                  {/if}
+                </td>
+                <td>
+                  <div class="progress-wrap">
+                    <div class="progress-bar">
+                      <div class="progress-fill" style="width:{Math.min(n.done || 0, 100)}%;background:{progressColor}"></div>
+                    </div>
+                    <span class="progress-val">{n.done || 0}%</span>
+                  </div>
+                </td>
+                <td class="cell-muted cell-num">{n.md ? `${n.md} MD` : '—'}</td>
+                <td class="cell-muted">{t.section}</td>
               </tr>
             {/each}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  {/if}
+          {/if}
+          {#if filteredTasks.length > 12}
+            <tr><td colspan="7" style="text-align:center;padding:10px;color:var(--text-muted);font-size:11px">
+              …i {filteredTasks.length - 12} więcej. <button class="link-btn" on:click={() => jumpTo('rank')}>Zobacz wszystkie zadania →</button>
+            </td></tr>
+          {/if}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Bottom summary strip ──────────────────────────────────── -->
+  <div class="bottom-strip">
+    <div class="strip-cell">
+      <span class="strip-label">Zaawansowanie sekcji głównych</span>
+      <span class="strip-value">{overall.toFixed(1)}%</span>
+    </div>
+    <div class="strip-cell">
+      <span class="strip-label">Koszt</span>
+      <span class="strip-value">
+        {fmtPln($projectMeta.actualBudget)} / {fmtPln($projectMeta.plannedBudget)} {$projectMeta.currency}
+      </span>
+    </div>
+    <div class="strip-cell">
+      <span class="strip-label">Zadania krytyczne</span>
+      <span class="strip-value">{critPct.toFixed(0)}%</span>
+    </div>
+  </div>
 </div>
 
 <style>
   .dash-root {
-    padding: 22px;
-  }
-
-  /* Hero strip — clean numeric overview */
-  .dash-hero {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 32px;
-    align-items: center;
-    padding: 22px 24px;
-    background: var(--bg-muted);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    margin-bottom: 22px;
-  }
-  .hero-left {
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-  .hero-label {
-    font-size: 11px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    font-weight: 600;
-  }
-  .hero-value {
-    font-size: 48px;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1;
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-  }
-  .hero-unit {
-    font-size: 28px;
-    color: var(--text-muted);
-    font-weight: 400;
-  }
-  .hero-sub {
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-  }
-  .hero-sub strong {
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
+    gap: 14px;
   }
 
-  .hero-right {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0;
-  }
-  .stat {
-    padding: 8px 18px;
-    border-left: 1px solid var(--border);
-  }
-  .stat:first-child {
-    border-left: none;
-    padding-left: 0;
-  }
-  .stat-label {
-    font-size: 10px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    font-weight: 600;
-    margin-bottom: 3px;
-  }
-  .stat-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-  }
-  .stat-total {
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--text-muted);
-  }
-
-  /* Two-column layout */
   .dash-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 18px;
+    gap: 12px;
   }
 
   .panel {
     background: var(--bg-surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 18px 20px;
-  }
-  .panel-danger {
-    border-left: 3px solid var(--color-danger);
+    border-radius: var(--radius-md);
   }
   .panel-hdr {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
-    padding-bottom: 10px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
-    gap: 10px;
+    gap: 12px;
   }
   .panel-hdr h2 {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--text-primary);
-    text-transform: uppercase;
-    letter-spacing: .04em;
     margin: 0;
   }
+  .panel-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
 
-  /* Alert rows */
+  /* Alert rows (attention panel) */
   .alert-row {
     display: grid;
     grid-template-columns: 1fr auto auto;
     gap: 14px;
     align-items: center;
-    padding: 12px 4px;
+    padding: 11px 16px;
     border-bottom: 1px solid var(--border-subtle);
-    text-align: left;
+    width: 100%;
     background: transparent;
     border-left: none;
     border-right: none;
     border-top: none;
-    width: 100%;
-    cursor: pointer;
     color: inherit;
     font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
     transition: background .12s ease;
   }
   .alert-row:last-of-type { border-bottom: none; }
-  .alert-row-btn:hover { background: var(--bg-muted); }
-  .alert-label {
-    font-size: 13px;
-    color: var(--text-primary);
-    font-weight: 500;
-  }
+  .alert-row:hover { background: var(--bg-muted); }
+  .alert-label { color: var(--text-primary); font-weight: 500; }
   .alert-count {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
+    color: var(--text-primary);
     font-variant-numeric: tabular-nums;
-    min-width: 36px;
+    min-width: 24px;
     text-align: right;
   }
+  .alert-count.is-bad { color: var(--color-danger); }
+
   .alert-tag {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
     border-radius: var(--radius-sm);
-    text-transform: uppercase;
-    letter-spacing: .04em;
     white-space: nowrap;
   }
+  .tag-ok     { background: var(--color-success-bg); color: var(--color-success); }
+  .tag-warn   { background: var(--color-warning-bg); color: var(--color-warning); }
+  .tag-danger { background: var(--color-danger-bg);  color: var(--color-danger); }
 
   /* Section progress list */
   .section-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-  }
-  .section-row {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .section-label {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
     gap: 10px;
+    padding: 14px 16px;
   }
+  .section-row { display: flex; flex-direction: column; gap: 5px; }
+  .section-label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .section-name {
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -396,31 +382,121 @@
   }
   .section-val {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  .section-wt {
-    color: var(--text-muted);
-    font-weight: 400;
-  }
-  .section-bar {
-    height: 10px;
-    background: var(--bg-muted);
-    border-radius: 5px;
-    overflow: hidden;
-  }
-  .section-bar-fill {
-    height: 100%;
-    border-radius: 5px;
-    transition: width .3s ease, background .2s ease;
-  }
+  .section-wt { color: var(--text-muted); font-weight: 400; }
+  .section-bar { height: 8px; background: var(--bg-muted); border-radius: var(--radius-sm); overflow: hidden; }
+  .section-bar-fill { height: 100%; transition: width .3s ease; }
+
   .empty {
     color: var(--text-muted);
     font-size: 12px;
-    padding: 20px 0;
+    padding: 16px;
     font-style: italic;
+  }
+
+  /* Tasks panel */
+  .tasks-panel .tbl-wrap { border: none; border-top: 1px solid var(--border); }
+  .filters {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .12s;
+  }
+  .filter-btn:hover { background: var(--bg-muted); color: var(--text-primary); }
+  .filter-btn.active {
+    background: var(--brand-primary-bg);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary-dark);
+    font-weight: 600;
+  }
+  .filter-count {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--bg-muted);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .filter-btn.active .filter-count { background: var(--brand-primary); color: #fff; }
+
+  .tasks-panel table.rank td {
+    padding: 10px 12px;
+    font-size: 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .tasks-panel table.rank tr:last-child td { border-bottom: none; }
+  .task-code {
+    font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: .02em;
+  }
+  .task-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 1px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .task-days { color: var(--text-muted); margin-left: 4px; font-size: 11px; }
+  .cell-muted { color: var(--text-secondary); }
+  .cell-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .01em;
+  }
+  .status-nowe       { background: var(--bg-muted); color: var(--text-secondary); border: 1px solid var(--border); }
+  .status-w-trakcie  { background: var(--brand-primary-bg); color: var(--brand-primary-dark); }
+  .status-opoznione  { background: var(--color-warning-bg); color: var(--color-warning); }
+  .status-krytyczne  { background: var(--color-danger-bg); color: var(--color-danger); }
+  .status-ukonczone  { background: var(--color-success-bg); color: var(--color-success); }
+
+  /* Progress */
+  .progress-wrap { display: flex; align-items: center; gap: 8px; }
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-muted);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .progress-fill { height: 100%; transition: width .3s ease; }
+  .progress-val {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    min-width: 32px;
+    text-align: right;
   }
 
   .link-btn {
@@ -428,42 +504,48 @@
     border: none;
     color: var(--brand-primary);
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    transition: background .15s;
+    padding: 2px 4px;
   }
-  .link-btn:hover { background: var(--brand-primary-bg); }
+  .link-btn:hover { text-decoration: underline; }
+
+  /* Bottom strip */
+  .bottom-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .strip-cell {
+    padding: 14px 20px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .strip-cell:last-child { border-right: none; }
+  .strip-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .strip-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+  }
 
   /* Mobile */
   @media (max-width: 900px) {
-    .dash-hero {
-      grid-template-columns: 1fr;
-      gap: 20px;
-      padding: 18px;
-    }
-    .hero-right {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0;
-    }
-    .stat {
-      padding: 10px 0;
-      border-left: none;
-      border-top: 1px solid var(--border);
-    }
-    .stat:nth-child(2) {
-      border-left: 1px solid var(--border);
-      padding-left: 18px;
-    }
-    .stat:nth-child(4) {
-      border-left: 1px solid var(--border);
-      padding-left: 18px;
-    }
-    .dash-grid {
-      grid-template-columns: 1fr;
-    }
-    .dash-root { padding: 12px; }
-    .hero-value { font-size: 40px; }
+    .dash-grid { grid-template-columns: 1fr; gap: 10px; }
+    .bottom-strip { grid-template-columns: 1fr; }
+    .strip-cell { border-right: none; border-bottom: 1px solid var(--border); }
+    .strip-cell:last-child { border-bottom: none; }
+    .filters { gap: 3px; }
+    .filter-btn { padding: 6px 10px; font-size: 12px; }
   }
 </style>

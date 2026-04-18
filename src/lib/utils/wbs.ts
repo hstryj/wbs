@@ -181,3 +181,45 @@ export function findNodeById(list: WbsNode[], id: number): WbsNode | null {
   }
   return null;
 }
+
+/** Derived status dla leaf'a, używany w widokach operacyjnych (Jira-style badge). */
+export type TaskStatus = 'nowe' | 'w-trakcie' | 'opoznione' | 'krytyczne' | 'ukonczone';
+
+export function taskStatus(n: WbsNode, todayISO: string): TaskStatus {
+  const done = n.done || 0;
+  if (done >= 100) return 'ukonczone';
+  if (n.priority === 'Krytyczny') return 'krytyczne';
+  if (n.dateEnd && n.dateEnd < todayISO) return 'opoznione';
+  if (done > 0) return 'w-trakcie';
+  return 'nowe';
+}
+
+export const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
+  'nowe':       'Nowe',
+  'w-trakcie':  'W trakcie',
+  'opoznione':  'Opóźnione',
+  'krytyczne':  'Krytyczne',
+  'ukonczone':  'Ukończone'
+};
+
+/** Znajduje nazwę sekcji głównej (root section / pierwszego poziomu) dla danego leafa.
+ * Struktura drzewa: Project (isProject=true) → Sekcje → Podsekcje → Leafy.
+ * Sekcja dla leafa = nazwa jego rootowego przodka wewnątrz projektu. */
+export function findSectionName(tree: WbsNode[], leafId: number): string {
+  function walk(list: WbsNode[], currentSection: string | null): string | null {
+    for (const n of list) {
+      if (n.id === leafId) return currentSection;
+      if (n.isProject) {
+        const r = walk(n.children, null);
+        if (r !== null) return r;
+      } else {
+        // first non-project ancestor becomes the section name
+        const nextSection = currentSection ?? (n.name || n._code || '');
+        const r = walk(n.children, nextSection);
+        if (r !== null) return r;
+      }
+    }
+    return null;
+  }
+  return walk(tree, null) ?? '—';
+}
