@@ -7,19 +7,31 @@
 --   1. Supabase dashboard → SQL Editor
 --   2. New query → wklej cały plik → Run
 --   3. Potwierdź że "Success. No rows returned"
+--
+-- UWAGA: zaczyna się od DROP IF EXISTS dla czystego startu. Gdybyś miała
+-- wcześniej częściowo utworzone tabele projects/project_members/* —
+-- zostaną usunięte wraz z danymi. Bezpieczne na etapie setup'u.
 -- ════════════════════════════════════════════════════════════════════
 
+-- ── CLEAN SLATE (safe reset, re-runnable) ────────────────────────
+drop trigger if exists trg_project_created on projects cascade;
+drop trigger if exists trg_projects_updated on projects cascade;
+drop table if exists project_invitations cascade;
+drop table if exists project_members cascade;
+drop table if exists projects cascade;
+drop function if exists public.is_project_member(uuid) cascade;
+drop function if exists public.project_role_of(uuid) cascade;
+drop function if exists public.on_project_created() cascade;
+drop function if exists public.touch_updated_at() cascade;
+drop type if exists project_role cascade;
+
 -- ── Types ──────────────────────────────────────────────────────────
-do $$ begin
-  create type project_role as enum ('owner', 'editor', 'viewer');
-exception
-  when duplicate_object then null;
-end $$;
+create type project_role as enum ('owner', 'editor', 'viewer');
 
 -- ── Tables ─────────────────────────────────────────────────────────
 
 -- Projekty — główna jednostka organizacji pracy
-create table if not exists projects (
+create table projects (
   id uuid primary key default gen_random_uuid(),
   created_by uuid references auth.users(id) on delete set null,
   name text not null default 'Nowy projekt',
@@ -32,7 +44,7 @@ create table if not exists projects (
 );
 
 -- Członkowie projektu — kto ma dostęp i z jaką rolą
-create table if not exists project_members (
+create table project_members (
   project_id uuid not null references projects(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   role project_role not null default 'editor',
@@ -41,7 +53,7 @@ create table if not exists project_members (
 );
 
 -- Zaproszenia (pending) — ktoś zaprasza po mailu, po acceptance stają się członkami
-create table if not exists project_invitations (
+create table project_invitations (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   email text not null,
@@ -54,11 +66,11 @@ create table if not exists project_invitations (
 );
 
 -- ── Indeksy ───────────────────────────────────────────────────────
-create index if not exists idx_project_members_user on project_members(user_id);
-create index if not exists idx_project_members_project on project_members(project_id);
-create index if not exists idx_invitations_email on project_invitations(email);
-create index if not exists idx_invitations_token on project_invitations(token);
-create index if not exists idx_projects_created_by on projects(created_by);
+create index idx_project_members_user on project_members(user_id);
+create index idx_project_members_project on project_members(project_id);
+create index idx_invitations_email on project_invitations(email);
+create index idx_invitations_token on project_invitations(token);
+create index idx_projects_created_by on projects(created_by);
 
 -- ── Funkcje pomocnicze (unikają rekurencji RLS) ──────────────────
 -- SECURITY DEFINER omija RLS przy sprawdzaniu członkostwa
