@@ -8,7 +8,8 @@
    */
   import { tree, addRoot, addSibling } from '../lib/state/tree';
   import { colVis } from '../lib/state/ui';
-  import { assignCodes, depthCfg, depthOf, rootWeightSum, rootWeightedSum } from '../lib/utils/wbs';
+  import { projectSettings } from '../lib/state/worklog';
+  import { assignCodes, collectLeaves, depthCfg, depthOf, rootWeightSum, rootWeightedSum } from '../lib/utils/wbs';
   import { WbsWarnBar, WbsColumnPanel, WbsProjectRow, WbsTaskRow, WbsAddRow } from '../components/editor';
   import type { WbsNode } from '../lib/types';
 
@@ -64,6 +65,12 @@
   $: rows = buildRows($tree);
   $: rw = rootWeightSum($tree);
   $: rwtd = rootWeightedSum($tree);
+
+  /* Suma osobodni + przelicznik na tygodnie przy zadanych godz./tydz.
+     Zakłada 8h = 1 MD (standard branżowy). */
+  $: totalMD = collectLeaves($tree).reduce((a, n) => a + (n.md || 0), 0);
+  $: totalHours = totalMD * 8;
+  $: weeksEst = $projectSettings.hrsPerWeek > 0 ? totalHours / $projectSettings.hrsPerWeek : 0;
 </script>
 
 <WbsWarnBar />
@@ -123,3 +130,35 @@
     {/if}
   </table>
 </div>
+
+{#if $tree.length > 0 && totalMD > 0}
+  <div class="md-summary">
+    <span class="md-val"><strong>{totalMD.toFixed(0)}</strong> osobodni</span>
+    <span class="md-sep">·</span>
+    <span class="md-val"><strong>{totalHours.toFixed(0)}</strong> godz. łącznie</span>
+    <span class="md-sep">·</span>
+    <span class="md-val">przy <strong>{$projectSettings.hrsPerWeek}</strong> h/tydz.</span>
+    <span class="md-sep">=</span>
+    <span class="md-val md-estimate"><strong>{weeksEst.toFixed(1)}</strong> tyg. pracy</span>
+  </div>
+{/if}
+
+<style>
+  .md-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-top: none;
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .md-val strong { color: var(--text-primary); font-weight: 700; }
+  .md-sep { color: var(--text-muted); }
+  .md-estimate { color: var(--brand-primary-dark); }
+  .md-estimate strong { color: var(--brand-primary-dark); }
+</style>

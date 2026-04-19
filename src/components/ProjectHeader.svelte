@@ -1,14 +1,17 @@
 <script lang="ts">
   import { projectMeta, STATUS_LABEL, fmtPln, type ProjectStatus } from '../lib/state/project';
+  import { projectSettings } from '../lib/state/worklog';
   import { tree } from '../lib/state/tree';
   import { collectLeaves } from '../lib/utils/wbs';
   import { todayISO, daysBetween } from '../lib/utils/dates';
 
   let editing = false;
   let draft = { ...$projectMeta };
+  let draftSettings = { ...$projectSettings };
 
   function openEdit() {
     draft = { ...$projectMeta };
+    draftSettings = { ...$projectSettings };
     editing = true;
   }
   function cancel() {
@@ -16,6 +19,7 @@
   }
   function save() {
     projectMeta.set({ ...draft });
+    projectSettings.set({ ...draftSettings });
     editing = false;
   }
 
@@ -130,6 +134,22 @@
         </label>
         <label>Budżet aktualny (PLN)
           <input type="number" min="0" step="1000" bind:value={draft.actualBudget} />
+        </label>
+      </div>
+
+      <h3 style="margin-top:18px;font-size:13px;color:var(--text-secondary)">Ustawienia godzin pracy</h3>
+      <div class="form-grid" style="margin-top:4px">
+        <label>Godz./tydzień
+          <input type="number" min="1" max="168" step="1" bind:value={draftSettings.hrsPerWeek} />
+        </label>
+        <label>Start pracy
+          <input type="time" bind:value={draftSettings.start} />
+        </label>
+        <label>Koniec pracy
+          <input type="time" bind:value={draftSettings.end} />
+        </label>
+        <label>Przerwa (min)
+          <input type="number" min="0" max="240" step="15" bind:value={draftSettings.brk} />
         </label>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
