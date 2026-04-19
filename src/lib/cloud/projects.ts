@@ -57,13 +57,14 @@ export async function getProject(id: string): Promise<{ data: CloudProject | nul
   return { data: res.data as CloudProject | null, error: res.error };
 }
 
-/** Utwórz nowy projekt z podanym payload. Trigger baza-owy dodaje usera jako owner'a. */
+/** Utwórz nowy projekt z podanym payload. `created_by` ustawia DB default
+ * (auth.uid()), trigger dodaje usera jako owner'a. */
 export async function createProject(name: string, payload: Record<string, unknown> = {}, client?: string): Promise<{ data: CloudProject | null; error: PostgrestError | null }> {
   const c = requireClient();
   const user = (await c.auth.getUser()).data.user;
   if (!user) throw new Error('Wymagane logowanie');
+  // Note: nie wysyłamy `created_by` — DB ma default auth.uid().
   const res = await c.from('projects').insert({
-    created_by: user.id,
     name: name || 'Nowy projekt',
     client: client ?? null,
     payload
