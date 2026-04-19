@@ -1,12 +1,16 @@
 <script lang="ts">
   import { overallPct } from '../lib/state/tree';
   import { theme, toggleTheme } from '../lib/state/theme';
+  import AuthMenu from './AuthMenu.svelte';
 </script>
 
 <div class="topbar">
   <h1>WBS – Edytor projektu</h1>
-  <div style="display:flex;align-items:center;gap:10px">
+  <div class="topbar-right">
     <span class="pill">Zaawansowanie: {$overallPct.toFixed(1)}%</span>
+    <div class="topbar-auth">
+      <AuthMenu />
+    </div>
     <button
       class="theme-toggle"
       aria-label={$theme === 'light' ? 'Włącz tryb ciemny' : 'Włącz tryb jasny'}
@@ -37,6 +41,14 @@
 </div>
 
 <style>
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-auth {
+    position: relative; /* anchor dla .auth-pop dropdown */
+  }
   .theme-toggle {
     background: transparent;
     border: none;

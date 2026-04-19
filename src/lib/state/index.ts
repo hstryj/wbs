@@ -13,3 +13,4 @@ export * from './project';
 export * from './theme';
 export * from './ui';
 export * from './persistence';
+export * from './auth';
