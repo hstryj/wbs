@@ -57,3 +57,36 @@ export function weeksInYear(y: number): number {
   const dec28 = new Date(Date.UTC(y, 11, 28));
   return getISOWeek(dec28)[1];
 }
+
+/** Shift a weekKey "YYYY-Wnn" by N weeks (UTC-safe). */
+export function shiftWeek(wk: string, deltaWeeks: number): string {
+  const y = parseInt(wk.slice(0, 4));
+  const w = parseInt(wk.slice(6));
+  const mon = weekStartDate(y, w);
+  mon.setUTCDate(mon.getUTCDate() + deltaWeeks * 7);
+  return weekKey(...getISOWeek(mon));
+}
+
+/** Polish short day names Mon..Sun */
+export const DAYS_PL_SHORT = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
+export const DAYS_PL_LONG  = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+export const MONTHS_PL = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+export const MONTHS_PL_SHORT = ['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
+
+/** All ISO dates (YYYY-MM-DD) within a given month (local). Returns 28–31 entries. */
+export function monthDates(year: number, month: number): string[] {
+  // month is 1-12
+  const out: string[] = [];
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate(); // days in month
+  for (let d = 1; d <= last; d++) {
+    const iso = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    out.push(iso);
+  }
+  return out;
+}
+
+/** True if ISO date falls on Saturday (6) or Sunday (0 JS, UTC) */
+export function isWeekend(iso: string): boolean {
+  const d = new Date(iso + 'T00:00:00Z').getUTCDay();
+  return d === 0 || d === 6;
+}

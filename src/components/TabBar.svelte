@@ -8,6 +8,7 @@
     { id: 'rank',     label: 'Zadania',         done: true },
     { id: 'team',     label: 'Zespół',          done: true },
     { id: 'gantt',    label: 'Harmonogram',     done: true },
+    { id: 'personal', label: 'Personal Plan',   done: true },
     { id: 'wlreport', label: 'Raport godzin',   done: true },
     { id: 'orders',   label: 'Zamówienia',      done: true },
     { id: 'risk',     label: 'Ryzyka',          done: true },

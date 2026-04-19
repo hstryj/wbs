@@ -13,6 +13,7 @@ import ReportView from './ReportView.svelte';
 import TreeView from './TreeView.svelte';
 import WaterfallView from './WaterfallView.svelte';
 import ChangelogView from './ChangelogView.svelte';
+import PersonalPlanView from './PersonalPlanView.svelte';
 import type { ComponentType } from 'svelte';
 import type { TabName } from '../lib/types';
 
@@ -28,7 +29,8 @@ export {
   ReportView,
   TreeView,
   WaterfallView,
-  ChangelogView
+  ChangelogView,
+  PersonalPlanView
 };
 
 /** Mapa zakładka → komponent widoku. Używana przez <svelte:component> w App.svelte. */
@@ -38,6 +40,7 @@ export const VIEWS: Record<TabName, ComponentType> = {
   rank:     RankingView,
   team:     TeamView,
   gantt:    GanttView,
+  personal: PersonalPlanView,
   wlreport: WorklogReportView,
   orders:   OrdersView,
   risk:     RisksView,
