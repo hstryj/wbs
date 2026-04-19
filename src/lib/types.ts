@@ -74,4 +74,5 @@ export interface Snapshot {
 
 export type TabName =
   | 'table' | 'dash' | 'chart' | 'wfall' | 'team' | 'rank'
-  | 'gantt' | 'risk' | 'report' | 'log' | 'wlreport' | 'orders';
+  | 'gantt' | 'risk' | 'report' | 'log' | 'wlreport' | 'orders'
+  | 'personal';

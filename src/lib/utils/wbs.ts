@@ -202,6 +202,26 @@ export const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
   'ukonczone':  'Ukończone'
 };
 
+/** True jeśli zadanie jest aktywne w danym dniu (ISO YYYY-MM-DD).
+ * Kryterium: day ∈ [dateStart, dateEnd]. Jeśli brak dat, zadanie nie jest
+ * uważane za aktywne (bo nie wiemy kiedy się odbywa). */
+export function taskActiveOnDay(n: WbsNode, isoDay: string): boolean {
+  if (!n.dateStart || !n.dateEnd) return false;
+  return n.dateStart <= isoDay && isoDay <= n.dateEnd;
+}
+
+/** Zbiera zadania przypisane do osoby, które są aktywne w podanym zakresie dat.
+ * Używane w Personal Plan do budowania chipów w kalendarzu. */
+export function tasksForPersonInRange(tree: WbsNode[], person: string, fromISO: string, toISO: string): WbsNode[] {
+  const all = collectLeaves(tree);
+  return all.filter((n) => {
+    if (n.resp !== person) return false;
+    if (!n.dateStart || !n.dateEnd) return false;
+    // task w zakresie gdy jest jakaś część overlapu
+    return n.dateEnd >= fromISO && n.dateStart <= toISO;
+  });
+}
+
 /** Znajduje nazwę sekcji głównej (root section / pierwszego poziomu) dla danego leafa.
  * Struktura drzewa: Project (isProject=true) → Sekcje → Podsekcje → Leafy.
  * Sekcja dla leafa = nazwa jego rootowego przodka wewnątrz projektu. */
