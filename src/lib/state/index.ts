@@ -8,6 +8,7 @@ export * from './changelog';
 export * from './snapshots';
 export * from './worklog';
 export * from './materials';
+export * from './templates';
 export * from './project';
 export * from './theme';
 export * from './ui';

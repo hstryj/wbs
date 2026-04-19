@@ -24,7 +24,7 @@
   function onNameInput(e: Event)  { setField(node.id, 'name', (e.target as HTMLInputElement).value); }
   function onWeightInput(e: Event){ setWeight(node.id, parseFloat((e.target as HTMLInputElement).value) || 0); }
   function onDoneInput(e: Event)  { setField(node.id, 'done', parseFloat((e.target as HTMLInputElement).value) || 0); }
-  function onMdInput(e: Event)    { setField(node.id, 'md', parseFloat((e.target as HTMLInputElement).value) || 0); }
+  function onMdChange(e: Event)   { setField(node.id, 'md', parseFloat((e.target as HTMLInputElement).value) || 0); }
   function onRespChange(e: Event) { setField(node.id, 'resp', (e.target as HTMLInputElement | HTMLSelectElement).value); }
   function onPriChange(e: Event)  { setField(node.id, 'priority', (e.target as HTMLSelectElement).value as Priority); }
   function onRagChange(e: Event)  { setField(node.id, 'rag', (e.target as HTMLSelectElement).value as RAG); }
@@ -100,7 +100,7 @@
     </td>
   {/if}
   {#if $colVis.md}
-    <td><input class="inum" type="number" min="0" step="0.5" value={node.md || 0} on:input={onMdInput} style="text-align:center" /></td>
+    <td><input class="inum" type="number" min="0" step="1" value={node.md || 0} on:change={onMdChange} style="text-align:center" /></td>
   {/if}
   {#if $colVis.start}
     <td><input type="date" value={node.dateStart} on:change={onStartChange} style="font-size:10px;padding:2px 4px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);width:88px" /></td>

@@ -1,24 +1,24 @@
 <script lang="ts">
   import { tree, addRoot } from '../lib/state/tree';
-  import { collectLeaves, isLeaf } from '../lib/utils/wbs';
   import { activeTab } from '../lib/state/ui';
+  import TemplatesModal from './TemplatesModal.svelte';
+
+  let templatesOpen = false;
 
   function addTask() {
-    // Jeśli są już sekcje — dodaj leaf do ostatniej; inaczej utwórz projekt.
-    const t = $tree;
-    if (!t.length) {
+    if (!$tree.length) {
       addRoot();
       return;
     }
-    // Najlepsza prosta heurystyka: przełącz na edytor WBS, gdzie można
-    // dodać podpunkt pod konkretną sekcję. Inaczej nowy leaf bez kontekstu
-    // tworzy bałagan w hierarchii.
     activeTab.set('table');
   }
 
   function exportReport() {
-    // Otwórz widok raportu który ma wbudowany przycisk drukowania.
     activeTab.set('report');
+  }
+
+  function openTemplates() {
+    templatesOpen = true;
   }
 </script>
 
@@ -31,7 +31,16 @@
     Dodaj zadanie
   </button>
 
-  <button class="btn" on:click={exportReport} style="background:var(--bg-surface);color:var(--text-primary);border-color:var(--border-strong)">
+  <button class="btn btn-secondary" on:click={openTemplates}>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+    Szablony
+  </button>
+
+  <button class="btn btn-secondary" on:click={exportReport}>
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
       <polyline points="7 10 12 15 17 10"/>
@@ -40,3 +49,18 @@
     Eksportuj
   </button>
 </div>
+
+<TemplatesModal bind:open={templatesOpen} />
+
+<style>
+  .btn-secondary {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+  .btn-secondary:hover {
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary-dark);
+    border-color: var(--brand-primary);
+  }
+</style>

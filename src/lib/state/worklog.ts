@@ -25,10 +25,23 @@ export interface ProjectSettings {
   start: string;
   end: string;
   brk: number;
+  /** Godziny pracy na tydzień per osoba (default 40). Używane w
+   * szacowaniu liczby pracowników potrzebnych do ukończenia projektu
+   * przy podanej sumie MD (osobodni) z zadań. */
+  hrsPerWeek: number;
 }
 
-export const projectSettings = writable<ProjectSettings>({ start: '07:00', end: '15:30', brk: 30 });
+export const projectSettings = writable<ProjectSettings>({
+  start: '07:00',
+  end: '15:30',
+  brk: 30,
+  hrsPerWeek: 40
+});
 persistStore(projectSettings, 'wbs_project_settings');
+
+/** Patch legacy stored settings — fill missing hrsPerWeek if reading
+ * older localStorage data that doesn't have it yet. */
+projectSettings.update((s) => ({ hrsPerWeek: 40, ...s }));
 
 // ── Read helpers (pure) ─────────────────────────────────────────────
 export function wlGetHours(wl: Worklog, person: string, y: number, w: number, dow: number): number {
