@@ -17,9 +17,18 @@
 
     if ($a.user) {
       // Świeżo zalogowany — otwórz lub stwórz projekt
-      const res = await autoOpenProject($a.user.email || 'user');
-      if (res.projectId) {
-        startCloudSync(res.projectId);
+      try {
+        console.log('[cloud] auth change → autoOpenProject for', $a.user.email);
+        const res = await autoOpenProject($a.user.email || 'user');
+        if (res.error) {
+          console.error('[cloud] autoOpenProject error:', res.error);
+        } else if (res.projectId) {
+          console.log('[cloud] project ready:', res.projectId, '→ startCloudSync');
+          startCloudSync(res.projectId);
+        }
+      } catch (err) {
+        console.error('[cloud] auto-open threw:', err);
+        currentProject.update((s) => ({ ...s, status: 'error', error: String(err) }));
       }
     } else {
       // Wylogowany — stop sync, zresetuj currentProject
