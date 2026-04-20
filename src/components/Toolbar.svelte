@@ -1,6 +1,7 @@
 <script lang="ts">
   import { quickAddTask } from '../lib/state/tree';
   import { activeTab, pendingFocusNodeId } from '../lib/state/ui';
+  import { auth } from '../lib/state/auth';
   import TemplatesModal from './TemplatesModal.svelte';
 
   let templatesOpen = false;
@@ -13,6 +14,10 @@
 
   function exportReport() {
     activeTab.set('report');
+  }
+
+  function openAdmin() {
+    activeTab.set('admin');
   }
 
   function openTemplates() {
@@ -46,6 +51,16 @@
     </svg>
     Eksportuj
   </button>
+
+  {#if $auth.configured}
+    <button class="btn btn-secondary btn-admin-shortcut" on:click={openAdmin}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/>
+        <path d="M9.5 12.5l1.8 1.8 3.2-3.6"/>
+      </svg>
+      Admin
+    </button>
+  {/if}
 </div>
 
 <section class="mobile-toolbar mobile-only">
@@ -112,6 +127,17 @@
     background: var(--brand-primary-bg);
     color: var(--brand-primary-dark);
     border-color: var(--brand-primary);
+  }
+
+  .btn-admin-shortcut {
+    color: #163e72;
+    background: linear-gradient(180deg, rgba(231, 240, 249, 0.96) 0%, rgba(245, 249, 253, 0.98) 100%);
+    border-color: rgba(46, 117, 182, 0.22);
+  }
+
+  .btn-admin-shortcut:hover {
+    background: linear-gradient(180deg, rgba(215, 232, 247, 0.98) 0%, rgba(236, 244, 251, 0.98) 100%);
+    color: #12345d;
   }
 
   @media (max-width: 820px) {

@@ -5,6 +5,7 @@
   import { VIEWS } from './views';
   import { activeTab, auth } from './lib/state';
   import { currentProject } from './lib/state/currentProject';
+  import { acceptAllPendingOrganizationInvitations } from './lib/cloud/admin';
   import { autoOpenProject, startCloudSync, stopCloudSync } from './lib/cloud/sync';
 
   let currentUserId: string | null = null;
@@ -19,6 +20,12 @@
     if ($a.user) {
       // Świeżo zalogowany — otwórz lub stwórz projekt
       try {
+        const orgInvites = await acceptAllPendingOrganizationInvitations();
+        if (orgInvites.error) {
+          console.warn('[cloud] organization invites auto-accept skipped:', orgInvites.error);
+        } else if (orgInvites.accepted > 0) {
+          console.log('[cloud] accepted organization invitations:', orgInvites.accepted);
+        }
         console.log('[cloud] auth change → autoOpenProject for', $a.user.email);
         const res = await autoOpenProject($a.user.email || 'user');
         if (res.error) {

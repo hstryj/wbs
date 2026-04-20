@@ -207,10 +207,14 @@
     align-items: center;
     gap: 0;
     padding: 0;
-    background: var(--bg-surface);
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 254, 0.98) 100%);
+    border-left: 1px solid rgba(20, 53, 95, 0.14);
+    border-right: 1px solid rgba(20, 53, 95, 0.14);
+    border-bottom: 1px solid rgba(20, 53, 95, 0.14);
+    box-shadow:
+      0 16px 32px rgba(15, 23, 42, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.92);
     font-size: 12px;
   }
 
@@ -221,15 +225,20 @@
     padding: 10px 16px;
     flex: 1;
     min-width: 0;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid rgba(20, 53, 95, 0.12);
+    background:
+      radial-gradient(circle at top left, rgba(46, 117, 182, 0.14), transparent 38%),
+      linear-gradient(135deg, rgba(17, 43, 76, 0.97) 0%, rgba(31, 66, 113, 0.96) 100%);
   }
   .ribbon-code {
-    font-family: 'Courier New', monospace;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
     font-size: 11px;
-    color: var(--text-muted);
-    padding: 3px 8px;
-    background: var(--bg-muted);
-    border-radius: 3px;
+    color: rgba(255, 255, 255, 0.88);
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     font-weight: 700;
     letter-spacing: 0.04em;
     white-space: nowrap;
@@ -241,63 +250,94 @@
   .ribbon-name {
     font-size: 14px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .ribbon-client {
     font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 1px;
+    color: rgba(255, 255, 255, 0.72);
+    margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .ribbon-client strong {
-    color: var(--text-primary);
+    color: #fff;
     font-weight: 600;
   }
 
   .ribbon-meta {
     display: flex;
     align-items: stretch;
+    background:
+      linear-gradient(180deg, rgba(243, 247, 252, 0.96) 0%, rgba(252, 253, 255, 0.98) 100%);
   }
   .meta-cell {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 8px 16px;
-    border-right: 1px solid var(--border);
+    gap: 2px;
+    padding: 12px 16px;
+    border-right: 1px solid rgba(20, 53, 95, 0.12);
     min-width: 0;
+    min-height: 60px;
   }
   .meta-cell:last-child {
     border-right: none;
   }
   .meta-label {
     font-size: 10px;
-    color: var(--text-muted);
+    color: #7788a4;
     font-weight: 600;
-    margin-bottom: 2px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   .meta-value {
     font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-weight: 700;
+    color: #243b5f;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
   .meta-extra {
-    color: var(--text-muted);
-    font-weight: 400;
+    color: #6c819f;
+    font-weight: 500;
     margin-left: 4px;
+  }
+  .meta-status {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    line-height: 1;
   }
 
   /* Status colors */
-  .meta-status-aktywny { color: var(--color-success); }
-  .meta-status-wstrzymany { color: var(--color-warning); }
-  .meta-status-zakończony { color: var(--text-muted); }
-  .meta-status-planowany { color: var(--brand-primary); }
+  .meta-status-aktywny {
+    color: #166534;
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.2);
+  }
+  .meta-status-wstrzymany {
+    color: #a16207;
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.22);
+  }
+  .meta-status-zakończony {
+    color: #52637c;
+    background: rgba(148, 163, 184, 0.14);
+    border-color: rgba(148, 163, 184, 0.2);
+  }
+  .meta-status-planowany {
+    color: #1d4d8c;
+    background: rgba(46, 117, 182, 0.12);
+    border-color: rgba(46, 117, 182, 0.18);
+  }
 
   .meta-deadline-over { color: var(--color-danger); }
   .meta-deadline-soon { color: var(--color-warning); }
@@ -308,16 +348,18 @@
   .meta-budget-ok { color: var(--text-primary); }
 
   .ribbon-edit {
-    background: transparent;
+    background:
+      linear-gradient(180deg, rgba(248, 251, 254, 0.98) 0%, rgba(239, 245, 252, 0.98) 100%);
     border: none;
-    border-left: 1px solid var(--border);
-    color: var(--text-muted);
+    border-left: 1px solid rgba(20, 53, 95, 0.12);
+    color: #607189;
     cursor: pointer;
     padding: 0 14px;
     height: 100%;
     align-self: stretch;
     display: flex;
     align-items: center;
+    transition: background .16s ease, color .16s ease, box-shadow .16s ease;
   }
   .ribbon-edit-label {
     display: none;
@@ -326,8 +368,42 @@
     font-weight: 700;
   }
   .ribbon-edit:hover {
-    color: var(--brand-primary);
-    background: var(--brand-primary-bg);
+    color: #1d4d8c;
+    background:
+      linear-gradient(180deg, rgba(234, 242, 250, 1) 0%, rgba(224, 236, 248, 1) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  @media (min-width: 901px) {
+    .proj-ribbon {
+      border-radius: 0 0 14px 14px;
+      overflow: hidden;
+    }
+
+    .ribbon-main {
+      min-height: 72px;
+      padding: 14px 18px;
+    }
+
+    .ribbon-name {
+      font-size: 18px;
+    }
+
+    .ribbon-client {
+      font-size: 12px;
+    }
+
+    .meta-cell {
+      min-width: 122px;
+    }
+
+    .meta-value {
+      font-size: 13px;
+    }
+
+    .ribbon-edit-label {
+      display: inline;
+    }
   }
 
   .project-modal-box {

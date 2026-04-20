@@ -89,33 +89,37 @@
     align-items: center;
     gap: 0;
     padding: 0 14px;
-    background: var(--bg-muted);
-    border: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(248, 251, 254, 0.98) 0%, rgba(238, 244, 250, 0.98) 100%);
+    border: 1px solid rgba(20, 53, 95, 0.14);
     border-top: none;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 14px 14px;
     font-size: 11px;
-    color: var(--text-secondary);
-    min-height: 28px;
+    color: #607189;
+    min-height: 34px;
     font-variant-numeric: tabular-nums;
+    box-shadow:
+      0 14px 28px rgba(15, 23, 42, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
   .sb-cell {
-    padding: 4px 12px;
+    padding: 6px 12px;
     display: flex;
     align-items: center;
     gap: 4px;
     white-space: nowrap;
   }
   .sb-cell strong {
-    color: var(--text-primary);
+    color: #22395d;
     font-weight: 600;
   }
   .sb-muted {
-    color: var(--text-muted);
+    color: #7a8ba5;
   }
   .sb-sep {
     width: 1px;
     height: 14px;
-    background: var(--border);
+    background: rgba(20, 53, 95, 0.14);
   }
   .sb-right {
     margin-left: auto;
@@ -125,6 +129,7 @@
     height: 7px;
     border-radius: 50%;
     margin-right: 2px;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.72);
   }
   .sb-dot-online { background: var(--color-success); }
   .sb-dot-offline { background: var(--text-muted); }
@@ -133,18 +138,44 @@
   @keyframes sb-pulse { 50% { opacity: .4; } }
 
   .sb-sync {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(20, 53, 95, 0.1);
+    border-radius: 999px;
+    color: #4f6280;
     font-family: inherit;
     font-size: 11px;
-    padding: 4px 12px;
+    padding: 5px 12px;
     display: flex;
     align-items: center;
     gap: 4px;
     cursor: pointer;
     white-space: nowrap;
+    transition: background .16s ease, color .16s ease, border-color .16s ease, box-shadow .16s ease;
   }
-  .sb-sync:hover { color: var(--text-primary); background: var(--bg-subtle); }
-  .sb-sync-err { color: var(--color-danger); }
+  .sb-sync:hover {
+    color: #1d4d8c;
+    background: rgba(231, 240, 249, 0.96);
+    border-color: rgba(46, 117, 182, 0.18);
+    box-shadow: 0 8px 18px rgba(31, 56, 100, 0.08);
+  }
+  .sb-sync-err {
+    color: var(--color-danger);
+    border-color: rgba(220, 38, 38, 0.18);
+    background: rgba(254, 242, 242, 0.94);
+  }
+
+  @media (max-width: 900px) {
+    .status-bar {
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .sb-sync {
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 4px 12px;
+      box-shadow: none;
+    }
+  }
 </style>

@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { TabName } from '../lib/types';
   import { activeTab } from '../lib/state/ui';
+  import { auth } from '../lib/state/auth';
   import { createEventDispatcher } from 'svelte';
 
-  const tabs: Array<{ id: TabName; label: string; done: boolean }> = [
+  const baseTabs: Array<{ id: TabName; label: string; done: boolean }> = [
     { id: 'dash',     label: 'Dashboard',       done: true },
     { id: 'table',    label: 'Edytor WBS',      done: true },
     { id: 'rank',     label: 'Zadania',         done: true },
@@ -19,9 +20,19 @@
     { id: 'log',      label: 'Dziennik',        done: true }
   ];
 
+  const adminTab = { id: 'admin' as TabName, label: 'Admin', done: true };
+
   const dispatch = createEventDispatcher();
 
   let menuOpen = false;
+  let tabs = baseTabs;
+
+  $: tabs = $auth.configured
+    ? baseTabs.flatMap((tab) => (tab.id === 'team' ? [tab, adminTab] : [tab]))
+    : baseTabs;
+  $: if (!$auth.configured && $activeTab === 'admin') {
+    activeTab.set('table');
+  }
 
   $: active = tabs.find((tab) => tab.id === $activeTab) ?? tabs[0];
 
@@ -47,6 +58,7 @@
       type="button"
       class="view-tab"
       class:active={$activeTab === tab.id}
+      class:admin-tab={tab.id === 'admin'}
       on:click={() => selectTab(tab.id)}
       title={tab.done ? 'Zmigrowany' : 'Nie zmigrowany — widok stub'}
     >
@@ -79,6 +91,7 @@
         type="button"
         class="mobile-nav-card"
         class:active={$activeTab === tab.id}
+        class:admin-tab={tab.id === 'admin'}
         on:click={() => selectTab(tab.id)}
       >
         <span class="mobile-nav-mark">{tabMark(tab.label)}</span>
@@ -110,6 +123,7 @@
           type="button"
           class="mobile-tab-menu-item"
           class:active={$activeTab === tab.id}
+          class:admin-tab={tab.id === 'admin'}
           on:click={() => selectTab(tab.id)}
         >
           <span class="mobile-tab-menu-icon">{tabMark(tab.label)}</span>
@@ -126,6 +140,21 @@
 <style>
   .mobile-only {
     display: none;
+  }
+
+  :global(.desktop-tabs .view-tab.admin-tab) {
+    color: #1d4d8c;
+    background: rgba(46, 117, 182, 0.08);
+  }
+
+  :global(.desktop-tabs .view-tab.admin-tab:hover) {
+    background: rgba(46, 117, 182, 0.14);
+  }
+
+  :global(.desktop-tabs .view-tab.admin-tab.active) {
+    background: linear-gradient(180deg, rgba(227, 239, 250, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
+    border-bottom-color: #1d4d8c;
+    color: #163e72;
   }
 
   @media (max-width: 820px) {
@@ -230,6 +259,11 @@
       border-color: rgba(46, 117, 182, 0.4);
       background: linear-gradient(135deg, rgba(46, 117, 182, 0.14), rgba(255, 255, 255, 0.98));
       box-shadow: 0 16px 28px rgba(46, 117, 182, 0.14);
+    }
+
+    .mobile-nav-card.admin-tab {
+      border-color: rgba(18, 52, 93, 0.16);
+      background: linear-gradient(135deg, rgba(18, 52, 93, 0.1), rgba(255, 255, 255, 0.98));
     }
 
     .mobile-nav-mark {
@@ -347,6 +381,11 @@
     .mobile-tab-menu-item.active {
       border-color: rgba(46, 117, 182, 0.35);
       background: rgba(46, 117, 182, 0.1);
+    }
+
+    .mobile-tab-menu-item.admin-tab {
+      border-color: rgba(18, 52, 93, 0.14);
+      background: linear-gradient(135deg, rgba(18, 52, 93, 0.06), rgba(246, 249, 252, 0.98));
     }
 
     .mobile-tab-menu-icon {

@@ -54,6 +54,18 @@
     info = 'Link logowania wysłany na ' + email.trim();
   }
 
+  async function submitCurrentMode() {
+    if (mode === 'signin') {
+      await doSignIn();
+      return;
+    }
+    if (mode === 'signup') {
+      await doSignUp();
+      return;
+    }
+    await doMagic();
+  }
+
   async function doSignOut() {
     busy = true;
     await flushCloudSync();
@@ -92,7 +104,7 @@
 {:else if $auth.loading}
   <span class="auth-badge auth-loading">…</span>
 {:else if $auth.user}
-  <button class="auth-btn auth-user" on:click={() => (open = !open)} title="Konto" aria-haspopup="true" aria-expanded={open}>
+  <button type="button" class="auth-btn auth-user" on:click={() => (open = !open)} title="Konto" aria-haspopup="true" aria-expanded={open}>
     <span class="auth-avatar">{avatar($auth.user.email || '?')}</span>
     <span class="auth-email">{$auth.user.email}</span>
   </button>
@@ -102,11 +114,11 @@
       <div class="auth-pop-info">
         Zalogowany jako<br><strong>{$auth.user.email}</strong>
       </div>
-      <button class="auth-pop-item" on:click={doSignOut} role="menuitem">Wyloguj</button>
+      <button type="button" class="auth-pop-item" on:click={doSignOut} role="menuitem">Wyloguj</button>
     </div>
   {/if}
 {:else}
-  <button class="auth-btn auth-login" on:click={() => (open = true)}>Zaloguj</button>
+  <button type="button" class="auth-btn auth-login" on:click={() => (open = true)}>Zaloguj</button>
 
   {#if open}
     <div
@@ -122,14 +134,14 @@
           <h3>
             {#if mode === 'signin'}Zaloguj się{:else if mode === 'signup'}Utwórz konto{:else}Link logowania{/if}
           </h3>
-          <button class="auth-close" on:click={closeModal} aria-label="Zamknij">✕</button>
+          <button type="button" class="auth-close" on:click={closeModal} aria-label="Zamknij">✕</button>
         </header>
 
-        <div class="auth-modal-body">
+        <form class="auth-modal-body" on:submit|preventDefault={submitCurrentMode}>
           <div class="auth-tabs" role="tablist">
-            <button class:active={mode === 'signin'} on:click={() => (mode = 'signin')} role="tab">Logowanie</button>
-            <button class:active={mode === 'signup'} on:click={() => (mode = 'signup')} role="tab">Rejestracja</button>
-            <button class:active={mode === 'magic'} on:click={() => (mode = 'magic')} role="tab">Magic link</button>
+            <button type="button" class:active={mode === 'signin'} on:click={() => (mode = 'signin')} role="tab">Logowanie</button>
+            <button type="button" class:active={mode === 'signup'} on:click={() => (mode = 'signup')} role="tab">Rejestracja</button>
+            <button type="button" class:active={mode === 'magic'} on:click={() => (mode = 'magic')} role="tab">Magic link</button>
           </div>
 
           <label class="auth-field">
@@ -152,8 +164,8 @@
           {/if}
 
           <button
+            type="submit"
             class="btn btn-blue auth-submit"
-            on:click={mode === 'signin' ? doSignIn : mode === 'signup' ? doSignUp : doMagic}
             disabled={busy}
           >
             {#if busy}…{:else if mode === 'signin'}Zaloguj{:else if mode === 'signup'}Utwórz konto{:else}Wyślij link{/if}
@@ -161,14 +173,14 @@
 
           <p class="auth-note">
             {#if mode === 'signin'}
-              Nie masz konta? <button class="auth-link" on:click={() => (mode = 'signup')}>Zarejestruj się</button>
+              Nie masz konta? <button type="button" class="auth-link" on:click={() => (mode = 'signup')}>Zarejestruj się</button>
             {:else if mode === 'signup'}
-              Masz już konto? <button class="auth-link" on:click={() => (mode = 'signin')}>Zaloguj</button>
+              Masz już konto? <button type="button" class="auth-link" on:click={() => (mode = 'signin')}>Zaloguj</button>
             {:else}
               Otrzymasz jednorazowy link. Kliknij, aby się zalogować bez hasła.
             {/if}
           </p>
-        </div>
+        </form>
       </div>
     </div>
   {/if}
@@ -275,14 +287,23 @@
     justify-content: center;
     z-index: 10000;
     backdrop-filter: blur(2px);
+    overflow: auto;
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
   }
   .auth-modal {
     background: var(--bg-surface);
-    border-radius: var(--radius-md);
-    width: min(400px, 92vw);
+    border-radius: 24px;
+    width: min(400px, 100%);
     color: var(--text-primary);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
+    max-height: min(720px, calc(100svh - 32px));
+    display: flex;
+    flex-direction: column;
   }
   .auth-modal-hdr {
     display: flex;
@@ -304,9 +325,22 @@
   }
   .auth-close:hover { color: var(--text-primary); background: var(--bg-subtle); }
 
-  .auth-modal-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .auth-modal-body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: auto;
+  }
 
-  .auth-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .auth-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   .auth-tabs button {
     background: transparent;
     border: none;
@@ -318,6 +352,9 @@
     color: var(--text-secondary);
     cursor: pointer;
     font-family: inherit;
+    flex: 1 0 auto;
+    min-height: 42px;
+    white-space: nowrap;
   }
   .auth-tabs button.active { color: var(--brand-primary-dark); border-bottom-color: var(--brand-primary); font-weight: 600; }
 
@@ -372,4 +409,84 @@
     padding: 0;
   }
   .auth-link:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .auth-btn {
+      min-height: 38px;
+    }
+
+    .auth-email {
+      max-width: 96px;
+    }
+
+    .auth-modal-bg {
+      align-items: flex-end;
+      padding:
+        max(10px, env(safe-area-inset-top))
+        max(10px, env(safe-area-inset-right))
+        max(10px, env(safe-area-inset-bottom))
+        max(10px, env(safe-area-inset-left));
+    }
+
+    .auth-modal {
+      width: 100%;
+      max-height: min(760px, calc(100svh - 12px));
+      border-radius: 24px 24px 20px 20px;
+      box-shadow: 0 18px 34px rgba(15, 23, 42, 0.18);
+    }
+
+    .auth-modal-hdr {
+      padding: 14px 14px 12px;
+    }
+
+    .auth-modal-body {
+      padding: 14px;
+      gap: 10px;
+    }
+
+    .auth-field {
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .auth-field input {
+      min-height: 46px;
+      padding: 0 12px;
+      font-size: 16px;
+      border-radius: 14px;
+    }
+
+    .auth-submit {
+      min-height: 46px;
+      border-radius: 14px;
+    }
+
+    .auth-note {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .auth-modal-bg {
+      padding:
+        max(8px, env(safe-area-inset-top))
+        max(8px, env(safe-area-inset-right))
+        max(8px, env(safe-area-inset-bottom))
+        max(8px, env(safe-area-inset-left));
+    }
+
+    .auth-modal {
+      border-radius: 22px 22px 18px 18px;
+    }
+
+    .auth-modal-hdr h3 {
+      font-size: 15px;
+    }
+
+    .auth-tabs button {
+      min-width: 112px;
+      padding: 8px 10px;
+    }
+  }
 </style>

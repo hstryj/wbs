@@ -6,7 +6,7 @@ Techniczny przegląd stanu repo dla kolejnego agenta pracującego już bez konte
 
 **Cel.** Webowa aplikacja do zarządzania WBS (Work Breakdown Structure) dla projektów przemysłowych: hierarchia zadań, KPI, zespół, ranking, Gantt, ryzyka, worklog, BOM/zamówienia i raport.
 
-**Status.** Frontend działa jako SPA na Svelte + Vite + TypeScript. Logowanie Supabase jest aktywne, aplikacja po zalogowaniu automatycznie otwiera lub tworzy projekt i synchronizuje jego payload przez warstwę cloud w [src/lib/cloud/sync.ts](/Users/hans/Documents/wbs/src/lib/cloud/sync.ts). Dodatkowo główny edytor WBS ma już osobny, dopracowany układ mobilny: sekcje są kartowe, menu jest zwijane, a tabela WBS na telefonie została zastąpiona zestawem kart projektów i zadań.
+**Status.** Frontend działa jako SPA na Svelte + Vite + TypeScript. Logowanie Supabase jest aktywne, aplikacja po zalogowaniu automatycznie otwiera lub tworzy projekt i synchronizuje jego payload przez warstwę cloud w [src/lib/cloud/sync.ts](/Users/hans/Documents/wbs/src/lib/cloud/sync.ts). Dodatkowo główny edytor WBS ma już osobny, dopracowany układ mobilny: sekcje są kartowe, menu jest zwijane, a tabela WBS na telefonie została zastąpiona zestawem kart projektów i zadań. Ekran logowania dostał też osobny, poprawiony układ mobilny. W repo jest również pierwszy działający widok panelu admina oraz warstwa danych pod organizacje, role firmowe, katalog pracowników, staffing projektów i zaproszenia do organizacji po mailu.
 
 ## 2. Architektura aplikacji
 
@@ -50,6 +50,8 @@ npm run preview
 - Typy domenowe: [src/lib/types.ts](src/lib/types.ts)
 - Supabase client: [src/lib/supabase/client.ts](src/lib/supabase/client.ts)
 - Cloud sync: [src/lib/cloud](src/lib/cloud)
+- Admin cloud API: [src/lib/cloud/admin.ts](src/lib/cloud/admin.ts)
+- Migracje Supabase: [supabase/migrations](supabase/migrations)
 - Env example: [.env.example](.env.example)
 
 ## 5. Co zostało zrobione mobilnie
@@ -62,6 +64,7 @@ npm run preview
   - `WbsTaskCard.svelte` dla zadań i sekcji,
   - `WbsAddCard.svelte` dla akcji dodawania kolejnych elementów.
 - Desktopowy układ tabeli został zostawiony bez usuwania; mobile działa równolegle przez `desktop-only` / `mobile-only`.
+- `AuthGate.svelte` ma poprawiony mobilny viewport, układ kartowy i bardziej kompaktowy formularz logowania na telefonie.
 
 ## 6. Co jest nadal niedokończone
 
@@ -70,6 +73,9 @@ npm run preview
 - Nie ma testów.
 - Brakuje warstwy publikacyjnej PWA: manifestu, ikon, ewentualnego service workera i decyzji czy publikujemy jako PWA czy wrapper store'owy.
 - `snapshots` nadal obejmują tylko serializację `tree` i `people`, a nie pełny stan projektu.
+- Panel admina ma już pierwszy UI w [src/views/AdminView.svelte](/Users/hans/Documents/wbs/src/views/AdminView.svelte), w tym flow zapraszania użytkowników do organizacji po mailu.
+- `App.svelte` automatycznie akceptuje oczekujące zaproszenia organizacyjne po zalogowaniu użytkownika, zanim wykona `autoOpenProject()`.
+- Migracje `005_admin_organizations.sql` i `006_org_invitations.sql` są w repo, ale nie zostały jeszcze przeze mnie odpalone na żywej bazie z tego środowiska, bo brak tu dostępu administracyjnego do SQL Executora / CLI.
 
 ## 7. Znane ryzyka
 
@@ -82,6 +88,7 @@ npm run preview
 
 Priorytet z perspektywy "domknąć produkt w maksymalnie kilku następnych turach":
 
-1. Zrobić krótki pass mobile dla pozostałych najczęściej używanych ekranów (`Dashboard`, `Team`, `Gantt`/`Ranking`) i sprawdzić top/bottom safe areas przed publikacją.
-2. Domknąć checklistę publikacyjną: typy DB z Supabase, finalny import danych lokalnych po loginie, manifest/ikony/splash i decyzję czy idziemy jako PWA czy wrapper store'owy.
-3. Rozważyć poszerzenie `snapshots`, żeby obejmowały więcej niż `tree` i `people`, skoro reszta danych też jest już synchronizowana.
+1. Odpalić na żywej bazie migracje [005_admin_organizations.sql](/Users/hans/Documents/wbs/supabase/migrations/005_admin_organizations.sql:1) i [006_org_invitations.sql](/Users/hans/Documents/wbs/supabase/migrations/006_org_invitations.sql:1), żeby zakładka `Admin` i zaproszenia działały live.
+2. Spiąć `project_staffing` z projektowym store `people`, żeby projekt mógł zaciągać obsadę z katalogu firmy zamiast ręcznego wpisywania.
+3. Dodać lepszy model ról / dostępu organizacyjnego: ewentualne invite-by-domain, SSO i później MFA tylko dla ról wrażliwych.
+4. Domknąć checklistę publikacyjną: typy DB z Supabase, manifest/ikony/splash i decyzję czy idziemy jako PWA czy wrapper store'owy.

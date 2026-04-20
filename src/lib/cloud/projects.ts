@@ -10,6 +10,7 @@ export type Role = 'owner' | 'editor' | 'viewer';
 
 export interface CloudProject {
   id: string;
+  organization_id: string | null;
   created_by: string | null;
   name: string;
   client: string | null;

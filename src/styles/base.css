@@ -33,6 +33,15 @@ body {
   transition: background .25s ease, color .25s ease;
 }
 
+@media (min-width: 821px) {
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(46, 117, 182, 0.1), transparent 28%),
+      radial-gradient(circle at top right, rgba(18, 52, 93, 0.08), transparent 24%),
+      linear-gradient(180deg, #edf3fa 0%, #f4f6fa 26%, #eef3f9 100%);
+  }
+}
+
 /* Headings — Inter looks best with slightly tighter letter-spacing at larger sizes */
 h1, h2, h3, h4 {
   letter-spacing: -0.01em;
