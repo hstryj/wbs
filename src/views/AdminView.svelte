@@ -63,6 +63,7 @@
   let newEmployeeTitle = '';
   let newEmployeeDepartment = '';
   let newEmployeeCode = '';
+  let selectedInviteEmployeeId = '';
   let newInviteEmail = '';
   let newInviteRole: OrganizationRole = 'member';
 
@@ -185,6 +186,10 @@
     : (['hr', 'coord_manager', 'member'] as OrganizationRole[]);
   $: if (!inviteRoleOptions.includes(newInviteRole)) {
     newInviteRole = inviteRoleOptions[inviteRoleOptions.length - 1] ?? 'member';
+  }
+  $: inviteableEmployees = employees.filter((employee) => employee.active && Boolean(employee.email?.trim()));
+  $: if (selectedInviteEmployeeId && !inviteableEmployees.some((employee) => employee.id === selectedInviteEmployeeId)) {
+    selectedInviteEmployeeId = '';
   }
   $: currentOrgProject = orgProjects.find((project) => project.id === activeProjectId) ?? null;
   $: currentProjectAttached = Boolean(currentOrgProject);
@@ -466,6 +471,7 @@
     }
 
     newInviteEmail = '';
+    selectedInviteEmployeeId = '';
     newInviteRole = 'member';
     await refreshInvitationsOnly(selectedOrgId);
     notice = 'Zaproszenie do organizacji zostało wysłane.';
@@ -597,6 +603,15 @@
   function handleMemberRoleSelect(userId: string, event: Event) {
     const role = (event.currentTarget as HTMLSelectElement).value as OrganizationRole;
     void onChangeMemberRole(userId, role);
+  }
+
+  function handleInviteEmployeeSelect(event: Event) {
+    selectedInviteEmployeeId = (event.currentTarget as HTMLSelectElement).value;
+    const employee = inviteableEmployees.find((item) => item.id === selectedInviteEmployeeId);
+    if (employee?.email) {
+      newInviteEmail = employee.email;
+      clearFeedback();
+    }
   }
 
   function projectBadge(project: CloudProject): string {
@@ -1103,6 +1118,15 @@
                   <small>po pierwszym logowaniu zostanie automatycznie dodana do organizacji</small>
                 </div>
                 <div class="admin-form-grid">
+                  <label class="admin-form-span-2">
+                    <span>Pracownik z katalogu</span>
+                    <select bind:value={selectedInviteEmployeeId} on:change={handleInviteEmployeeSelect} disabled={!canInviteMembers || inviteableEmployees.length === 0}>
+                      <option value="">Wybierz istniejącego pracownika z organizacji</option>
+                      {#each inviteableEmployees as employee}
+                        <option value={employee.id}>{employee.full_name} — {employee.email}</option>
+                      {/each}
+                    </select>
+                  </label>
                   <label>
                     <span>Email</span>
                     <input bind:value={newInviteEmail} type="email" placeholder="np. osoba@firma.pl" disabled={!canInviteMembers} />
@@ -1116,6 +1140,11 @@
                     </select>
                   </label>
                 </div>
+                {#if inviteableEmployees.length === 0}
+                  <div class="admin-footnote">
+                    W katalogu tej organizacji nie ma jeszcze aktywnego pracownika z adresem email, więc zaproszenie trzeba wpisać ręcznie.
+                  </div>
+                {/if}
                 <button class="admin-primary-btn" type="submit" disabled={!canInviteMembers || saving}>Wyślij zaproszenie</button>
               </form>
 
@@ -1585,6 +1614,10 @@
 
   .admin-form-grid-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-form-span-2 {
+    grid-column: 1 / -1;
   }
 
   .admin-form label,
