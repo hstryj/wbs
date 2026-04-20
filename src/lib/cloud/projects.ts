@@ -57,19 +57,23 @@ export async function getProject(id: string): Promise<{ data: CloudProject | nul
   return { data: res.data as CloudProject | null, error: res.error };
 }
 
-/** Utwórz nowy projekt z podanym payload. `created_by` ustawia DB default
- * (auth.uid()), trigger dodaje usera jako owner'a. */
+/** Utwórz nowy projekt przez RPC `create_project_for_me` (SECURITY DEFINER —
+ * omija RLS issue z publishable keys). Zwraca pełny rekord projektu. */
 export async function createProject(name: string, payload: Record<string, unknown> = {}, client?: string): Promise<{ data: CloudProject | null; error: PostgrestError | null }> {
   const c = requireClient();
-  const user = (await c.auth.getUser()).data.user;
-  if (!user) throw new Error('Wymagane logowanie');
-  // Note: nie wysyłamy `created_by` — DB ma default auth.uid().
-  const res = await c.from('projects').insert({
-    name: name || 'Nowy projekt',
-    client: client ?? null,
-    payload
-  }).select().single();
-  return { data: res.data as CloudProject | null, error: res.error };
+  // RPC tworzy projekt i dodaje usera jako owner'a, bypass RLS
+  const rpcRes = await c.rpc('create_project_for_me', {
+    p_name: name || 'Nowy projekt',
+    p_payload: payload,
+    p_client: client ?? null
+  });
+  if (rpcRes.error) {
+    return { data: null, error: rpcRes.error };
+  }
+  const newId = rpcRes.data as string;
+  // Teraz odczytaj pełny rekord (SELECT z RLS — user jest teraz członkiem)
+  const sel = await c.from('projects').select('*').eq('id', newId).single();
+  return { data: sel.data as CloudProject | null, error: sel.error };
 }
 
 /** Aktualizuj payload projektu (atomic JSONB replace). */
