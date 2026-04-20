@@ -2,6 +2,7 @@
   import { quickAddTask } from '../lib/state/tree';
   import { activeTab, pendingFocusNodeId } from '../lib/state/ui';
   import { auth } from '../lib/state/auth';
+  import { tabToneVars } from '../lib/utils/tabTones';
   import TemplatesModal from './TemplatesModal.svelte';
 
   let templatesOpen = false;
@@ -63,7 +64,7 @@
   {/if}
 </div>
 
-<section class="mobile-toolbar mobile-only">
+<section class="mobile-toolbar mobile-only" style={tabToneVars($activeTab)}>
   <div class="mobile-toolbar-hero">
     <div class="mobile-toolbar-copy">
       <span class="mobile-toolbar-eyebrow">Szybkie akcje</span>
@@ -81,7 +82,7 @@
       </span>
     </button>
 
-    <button type="button" class="mobile-action-card" on:click={openTemplates}>
+    <button type="button" class="mobile-action-card tone-template" on:click={openTemplates}>
       <span class="mobile-action-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
@@ -95,7 +96,7 @@
       </span>
     </button>
 
-    <button type="button" class="mobile-action-card" on:click={exportReport}>
+    <button type="button" class="mobile-action-card tone-report" on:click={exportReport}>
       <span class="mobile-action-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -160,9 +161,11 @@
     .mobile-toolbar-hero {
       padding: 14px;
       border-radius: 24px;
-      background: rgba(255, 255, 255, 0.94);
-      border: 1px solid rgba(37, 84, 136, 0.12);
-      box-shadow: 0 14px 28px rgba(31, 56, 100, 0.08);
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.84), transparent 34%),
+        linear-gradient(140deg, rgba(255, 255, 255, 0.98) 0%, color-mix(in srgb, var(--tab-solid) 8%, #ffffff) 100%);
+      border: 1px solid color-mix(in srgb, var(--tab-solid) 16%, rgba(37, 84, 136, 0.12));
+      box-shadow: 0 14px 28px var(--tab-glow);
     }
 
     .mobile-toolbar-copy {
@@ -182,7 +185,7 @@
     .mobile-toolbar-copy strong {
       font-size: 18px;
       line-height: 1.15;
-      color: #12345d;
+      color: var(--tab-ink);
       letter-spacing: -0.02em;
     }
 
@@ -210,7 +213,9 @@
       padding: 13px;
       border-radius: 22px;
       border: 1px solid rgba(37, 84, 136, 0.12);
-      background: rgba(255, 255, 255, 0.96);
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.84), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f7fbff 100%);
       box-shadow: 0 14px 24px rgba(31, 56, 100, 0.08);
       text-align: left;
       cursor: pointer;
@@ -220,9 +225,25 @@
     }
 
     .mobile-action-card.primary {
-      background: linear-gradient(135deg, #12345d 0%, #2e75b6 100%);
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 34%),
+        linear-gradient(135deg, var(--tab-hero-from) 0%, var(--tab-hero-to) 100%);
       color: #fff;
       border-color: transparent;
+      box-shadow: 0 16px 28px var(--tab-glow);
+    }
+
+    .mobile-action-card.tone-template {
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.84), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(238, 245, 252, 0.98) 100%);
+    }
+
+    .mobile-action-card.tone-report {
+      border-color: rgba(154, 106, 49, 0.16);
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.84), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(251, 246, 238, 0.98) 100%);
     }
 
     .mobile-action-icon {
@@ -254,6 +275,7 @@
     .mobile-action-copy strong {
       font-size: 15px;
       line-height: 1.15;
+      color: inherit;
     }
 
     .mobile-action-copy small {
@@ -264,6 +286,64 @@
 
     .mobile-action-card.primary .mobile-action-copy small {
       color: rgba(255, 255, 255, 0.76);
+    }
+
+    :global([data-theme='dark']) .mobile-toolbar {
+      background:
+        radial-gradient(circle at bottom left, rgba(76, 154, 255, 0.16), transparent 42%),
+        linear-gradient(180deg, #0d1728 0%, #101d31 100%);
+      border-bottom-color: rgba(83, 110, 145, 0.35);
+    }
+
+    :global([data-theme='dark']) .mobile-toolbar-hero {
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.06), transparent 34%),
+        linear-gradient(140deg, rgba(18, 31, 50, 0.98) 0%, color-mix(in srgb, var(--tab-solid) 18%, rgba(18, 31, 50, 0.98)) 100%);
+      border-color: color-mix(in srgb, var(--tab-solid) 24%, rgba(83, 110, 145, 0.3));
+      box-shadow: 0 18px 30px rgba(0, 0, 0, 0.28);
+    }
+
+    :global([data-theme='dark']) .mobile-toolbar-copy strong {
+      color: #f4f8ff;
+    }
+
+    :global([data-theme='dark']) .mobile-toolbar-copy span:last-child,
+    :global([data-theme='dark']) .mobile-toolbar-eyebrow {
+      color: #c2d0e2;
+    }
+
+    :global([data-theme='dark']) .mobile-action-card,
+    :global([data-theme='dark']) .mobile-action-card.tone-template,
+    :global([data-theme='dark']) .mobile-action-card.tone-report {
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 34%),
+        linear-gradient(180deg, rgba(17, 29, 48, 0.98) 0%, rgba(14, 24, 39, 0.98) 100%);
+      border-color: rgba(83, 110, 145, 0.28);
+      color: #eef4ff;
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+    }
+
+    :global([data-theme='dark']) .mobile-action-card.tone-template {
+      border-color: rgba(76, 154, 255, 0.24);
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 34%),
+        linear-gradient(180deg, rgba(17, 29, 48, 0.98) 0%, rgba(23, 38, 58, 0.98) 100%);
+    }
+
+    :global([data-theme='dark']) .mobile-action-card.tone-report {
+      border-color: rgba(194, 122, 27, 0.24);
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 34%),
+        linear-gradient(180deg, rgba(17, 29, 48, 0.98) 0%, rgba(42, 34, 28, 0.98) 100%);
+    }
+
+    :global([data-theme='dark']) .mobile-action-icon {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f4f8ff;
+    }
+
+    :global([data-theme='dark']) .mobile-action-copy small {
+      color: #c2d0e2;
     }
   }
 </style>

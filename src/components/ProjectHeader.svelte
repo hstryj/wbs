@@ -1,23 +1,34 @@
 <script lang="ts">
   import { get } from 'svelte/store';
+  import { auth } from '../lib/state/auth';
   import { projectMeta, STATUS_LABEL, fmtPln, normalizeProjectMeta, type ProjectStatus } from '../lib/state/project';
   import { projectSettings } from '../lib/state/worklog';
   import { tree } from '../lib/state/tree';
   import { currentProject } from '../lib/state/currentProject';
-  import { updateProjectMeta } from '../lib/cloud/projects';
+  import { listProjects, type CloudProject, updateProjectMeta } from '../lib/cloud/projects';
+  import { flushCloudSync, loadFromCloud, startCloudSync, stopCloudSync } from '../lib/cloud/sync';
   import { collectLeaves } from '../lib/utils/wbs';
   import { todayISO, daysBetween } from '../lib/utils/dates';
 
   let editing = false;
   let draft = normalizeProjectMeta($projectMeta);
   let draftSettings = { ...$projectSettings };
+  let cloudProjects: CloudProject[] = [];
+  let projectPickerId = '';
+  let projectPickerBusy = false;
+  let projectPickerInfo: string | null = null;
 
   function openEdit() {
     draft = normalizeProjectMeta($projectMeta, {
       name: get(currentProject).name || ''
     });
     draftSettings = { ...$projectSettings };
+    projectPickerInfo = null;
+    projectPickerId = get(currentProject).id || '';
     editing = true;
+    if ($auth.configured) {
+      void loadCloudProjects();
+    }
   }
   function cancel() {
     editing = false;
@@ -49,6 +60,47 @@
       name: nextMeta.name || 'Nowy projekt',
       client: nextMeta.client || null
     });
+  }
+
+  async function loadCloudProjects() {
+    projectPickerBusy = true;
+    projectPickerInfo = null;
+    const res = await listProjects();
+    projectPickerBusy = false;
+    if (res.error) {
+      projectPickerInfo = res.error.message;
+      cloudProjects = [];
+      return;
+    }
+    cloudProjects = res.data;
+    projectPickerId = get(currentProject).id || res.data[0]?.id || '';
+  }
+
+  async function openSelectedProject() {
+    if (!projectPickerId) return;
+    const previousId = get(currentProject).id;
+    projectPickerBusy = true;
+    projectPickerInfo = null;
+
+    const flushRes = await flushCloudSync();
+    if (flushRes.error) {
+      projectPickerBusy = false;
+      projectPickerInfo = flushRes.error;
+      return;
+    }
+
+    stopCloudSync();
+    const loadRes = await loadFromCloud(projectPickerId);
+    if (loadRes.error) {
+      if (previousId) startCloudSync(previousId);
+      projectPickerBusy = false;
+      projectPickerInfo = loadRes.error;
+      return;
+    }
+
+    startCloudSync(projectPickerId);
+    projectPickerBusy = false;
+    editing = false;
   }
 
   const STATUS_OPTIONS: ProjectStatus[] = ['aktywny', 'wstrzymany', 'zakończony', 'planowany'];
@@ -114,12 +166,12 @@
     </div>
   </div>
 
-  <button class="ribbon-edit" on:click={openEdit} title="Edytuj metadane projektu">
+  <button class="ribbon-edit" on:click={openEdit} title="Edytuj metadane albo otwórz projekt z bazy">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
       <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
     </svg>
-    <span class="ribbon-edit-label">Edytuj projekt</span>
+    <span class="ribbon-edit-label">Edytuj / otwórz projekt</span>
   </button>
 </div>
 
@@ -179,6 +231,38 @@
           </label>
         </div>
       </section>
+
+      {#if $auth.configured}
+        <section class="project-modal-section">
+          <div class="project-modal-section-title">Cloud workspace</div>
+          <div class="project-switcher">
+            <label class="form-full">Istniejący projekt z bazy
+              <select bind:value={projectPickerId} disabled={projectPickerBusy || cloudProjects.length === 0}>
+                {#if cloudProjects.length === 0}
+                  <option value="">Brak innych projektów w chmurze</option>
+                {:else}
+                  {#each cloudProjects as project}
+                    <option value={project.id}>
+                      {project.name || 'Bez nazwy'}{project.client ? ` — ${project.client}` : ''}
+                    </option>
+                  {/each}
+                {/if}
+              </select>
+            </label>
+            <div class="project-switcher-actions">
+              <button class="btn project-switcher-btn" disabled={!projectPickerId || projectPickerBusy} on:click={openSelectedProject}>
+                {projectPickerBusy ? 'Ładowanie…' : projectPickerId === $currentProject.id ? 'Odśwież z bazy' : 'Otwórz wybrany projekt'}
+              </button>
+            </div>
+            <p class="project-switcher-note">
+              Tu otworzysz istniejący projekt widoczny dla Twojego konta i od razu przełączysz cały workspace na ten zapis z bazy.
+            </p>
+            {#if projectPickerInfo}
+              <p class="project-switcher-error">{projectPickerInfo}</p>
+            {/if}
+          </div>
+        </section>
+      {/if}
 
       <section class="project-modal-section">
         <div class="project-modal-section-title">Ustawienia godzin pracy</div>
@@ -354,29 +438,37 @@
 
   .ribbon-edit {
     background:
-      linear-gradient(180deg, rgba(248, 251, 254, 0.98) 0%, rgba(239, 245, 252, 0.98) 100%);
+      radial-gradient(circle at top center, rgba(255, 255, 255, 0.28), transparent 38%),
+      linear-gradient(145deg, #244d86 0%, #2e75b6 100%);
     border: none;
     border-left: 1px solid rgba(20, 53, 95, 0.12);
-    color: #607189;
+    color: #fff;
     cursor: pointer;
-    padding: 0 14px;
+    padding: 0 18px;
     height: 100%;
     align-self: stretch;
     display: flex;
     align-items: center;
-    transition: background .16s ease, color .16s ease, box-shadow .16s ease;
+    justify-content: center;
+    gap: 8px;
+    min-width: 182px;
+    font-weight: 700;
+    transition: background .16s ease, color .16s ease, box-shadow .16s ease, transform .12s ease;
   }
   .ribbon-edit-label {
     display: none;
-    margin-left: 8px;
     font-size: 12px;
     font-weight: 700;
+    letter-spacing: 0.01em;
   }
   .ribbon-edit:hover {
-    color: #1d4d8c;
     background:
-      linear-gradient(180deg, rgba(234, 242, 250, 1) 0%, rgba(224, 236, 248, 1) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      radial-gradient(circle at top center, rgba(255, 255, 255, 0.34), transparent 38%),
+      linear-gradient(145deg, #1e4577 0%, #3882c6 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 12px 24px rgba(46, 117, 182, 0.22);
+    transform: translateY(-1px);
   }
 
   @media (min-width: 901px) {
@@ -473,6 +565,44 @@
     background: var(--bg-muted);
     color: var(--text-primary);
     border-color: var(--border);
+  }
+
+  .project-switcher {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .project-switcher-actions {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .project-switcher-btn {
+    background: linear-gradient(135deg, rgba(231, 240, 249, 0.98) 0%, rgba(245, 249, 253, 0.98) 100%);
+    color: #12345d;
+    border-color: rgba(46, 117, 182, 0.22);
+  }
+
+  .project-switcher-btn:hover {
+    background: linear-gradient(135deg, rgba(215, 232, 247, 0.98) 0%, rgba(236, 244, 251, 0.98) 100%);
+    color: #12345d;
+  }
+
+  .project-switcher-note,
+  .project-switcher-error {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .project-switcher-note {
+    color: var(--text-secondary);
+  }
+
+  .project-switcher-error {
+    color: var(--color-danger);
+    font-weight: 600;
   }
 
   .form-grid {
@@ -579,7 +709,9 @@
       justify-content: center;
       padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
       color: #fff;
-      background: rgba(255, 255, 255, 0.06);
+      background:
+        radial-gradient(circle at top center, rgba(255, 255, 255, 0.18), transparent 36%),
+        linear-gradient(145deg, rgba(31, 66, 113, 0.94) 0%, rgba(46, 117, 182, 0.94) 100%);
       gap: 8px;
     }
     .ribbon-edit-label {

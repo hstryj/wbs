@@ -737,6 +737,26 @@
     cursor: pointer;
   }
 
+  :global([data-theme='dark']) .task-mobile-card {
+    border-color: rgba(83, 110, 145, 0.28);
+    background:
+      radial-gradient(circle at top right, rgba(76, 154, 255, 0.12), transparent 36%),
+      linear-gradient(180deg, rgba(17, 29, 48, 0.98), rgba(12, 21, 35, 0.98));
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+  }
+
+  :global([data-theme='dark']) .task-mobile-code,
+  :global([data-theme='dark']) .task-mobile-tile {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(83, 110, 145, 0.22);
+  }
+
+  :global([data-theme='dark']) .mobile-empty-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(83, 110, 145, 0.35);
+    color: #c2d0e2;
+  }
+
   /* Bottom strip */
   .bottom-strip {
     display: grid;

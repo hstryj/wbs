@@ -318,6 +318,20 @@
     text-align: center;
   }
 
+  :global([data-theme='dark']) .ranking-card,
+  :global([data-theme='dark']) .ranking-tile {
+    border-color: rgba(83, 110, 145, 0.28);
+    background:
+      radial-gradient(circle at top right, rgba(76, 154, 255, 0.1), transparent 36%),
+      linear-gradient(180deg, rgba(17, 29, 48, 0.98), rgba(12, 21, 35, 0.98));
+  }
+
+  :global([data-theme='dark']) .ranking-mobile-empty {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(83, 110, 145, 0.35);
+    color: #c2d0e2;
+  }
+
   @media (max-width: 900px) {
     .ctrl-bar {
       padding: 14px;
