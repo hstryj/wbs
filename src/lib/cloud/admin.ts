@@ -185,7 +185,6 @@ export async function listOrganizationInvitations(organizationId: string): Promi
     .from('organization_invitations')
     .select('*')
     .eq('organization_id', organizationId)
-    .is('accepted_at', null)
     .order('created_at', { ascending: false });
   return { data: (res.data || []) as CloudOrganizationInvitation[], error: res.error };
 }

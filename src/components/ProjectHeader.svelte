@@ -1,6 +1,6 @@
 <script lang="ts">
   import { get } from 'svelte/store';
-  import { projectMeta, STATUS_LABEL, fmtPln, type ProjectStatus } from '../lib/state/project';
+  import { projectMeta, STATUS_LABEL, fmtPln, normalizeProjectMeta, type ProjectStatus } from '../lib/state/project';
   import { projectSettings } from '../lib/state/worklog';
   import { tree } from '../lib/state/tree';
   import { currentProject } from '../lib/state/currentProject';
@@ -9,11 +9,13 @@
   import { todayISO, daysBetween } from '../lib/utils/dates';
 
   let editing = false;
-  let draft = { ...$projectMeta };
+  let draft = normalizeProjectMeta($projectMeta);
   let draftSettings = { ...$projectSettings };
 
   function openEdit() {
-    draft = { ...$projectMeta };
+    draft = normalizeProjectMeta($projectMeta, {
+      name: get(currentProject).name || ''
+    });
     draftSettings = { ...$projectSettings };
     editing = true;
   }
@@ -30,19 +32,22 @@
     }
   }
   async function save() {
-    projectMeta.set({ ...draft });
+    const nextMeta = normalizeProjectMeta(draft, {
+      name: get(currentProject).name || ''
+    });
+    projectMeta.set(nextMeta);
     projectSettings.set({ ...draftSettings });
     currentProject.update((state) => ({
       ...state,
-      name: draft.name.trim() || state.name
+      name: nextMeta.name || state.name
     }));
     editing = false;
 
     const projectId = get(currentProject).id;
     if (!projectId) return;
     await updateProjectMeta(projectId, {
-      name: draft.name.trim() || 'Nowy projekt',
-      client: draft.client.trim() || null
+      name: nextMeta.name || 'Nowy projekt',
+      client: nextMeta.client || null
     });
   }
 
@@ -485,6 +490,8 @@
   }
   .form-grid input,
   .form-grid select {
+    width: 100%;
+    min-width: 0;
     border: 1px solid var(--border-strong);
     border-radius: 3px;
     padding: 7px 10px;

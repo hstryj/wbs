@@ -29,8 +29,44 @@ export const DEFAULT_PROJECT_META: ProjectMeta = {
   manager: ''
 };
 
-export const projectMeta = writable<ProjectMeta>({ ...DEFAULT_PROJECT_META });
+function coerceNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+export function normalizeProjectMeta(
+  value: Partial<ProjectMeta> | null | undefined,
+  fallback: Partial<ProjectMeta> = {}
+): ProjectMeta {
+  const merged = {
+    ...DEFAULT_PROJECT_META,
+    ...fallback,
+    ...(value || {})
+  };
+
+  return {
+    name: String(merged.name || '').trim(),
+    code: String(merged.code || '').trim(),
+    client: String(merged.client || '').trim(),
+    dateStart: String(merged.dateStart || ''),
+    dateEnd: String(merged.dateEnd || ''),
+    status: (['aktywny', 'wstrzymany', 'zakończony', 'planowany'].includes(String(merged.status))
+      ? merged.status
+      : DEFAULT_PROJECT_META.status) as ProjectStatus,
+    plannedBudget: coerceNumber(merged.plannedBudget, DEFAULT_PROJECT_META.plannedBudget),
+    actualBudget: coerceNumber(merged.actualBudget, DEFAULT_PROJECT_META.actualBudget),
+    currency: String(merged.currency || DEFAULT_PROJECT_META.currency).trim() || DEFAULT_PROJECT_META.currency,
+    manager: String(merged.manager || '').trim()
+  };
+}
+
+export const projectMeta = writable<ProjectMeta>(normalizeProjectMeta(DEFAULT_PROJECT_META));
 persistStore(projectMeta, 'wbs_project_meta');
+projectMeta.update((meta) => normalizeProjectMeta(meta));
 
 export const STATUS_LABEL: Record<ProjectStatus, string> = {
   aktywny: 'Aktywny',

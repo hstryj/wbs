@@ -1,7 +1,7 @@
 <script lang="ts">
   import { auth } from '../lib/state/auth';
   import { currentProject } from '../lib/state/currentProject';
-  import { projectMeta } from '../lib/state/project';
+  import { projectMeta, normalizeProjectMeta } from '../lib/state/project';
   import {
     attachProjectToOrganization,
     assignEmployeeToProject,
@@ -28,7 +28,7 @@
     type CloudProjectStaffing,
     type OrganizationRole
   } from '../lib/cloud/admin';
-  import type { CloudProject } from '../lib/cloud/projects';
+  import { updateProjectMeta, updateProjectPayload, type CloudProject } from '../lib/cloud/projects';
 
   type AdminSection = 'context' | 'projects' | 'employees' | 'access';
 
@@ -76,6 +76,9 @@
   let employeeDraftTitle = '';
   let employeeDraftDepartment = '';
   let employeeDraftActive = true;
+  let editingProjectId: string | null = null;
+  let projectDraftName = '';
+  let projectDraftClient = '';
 
   const ROLE_LABEL: Record<OrganizationRole, string> = {
     owner: 'Owner',
@@ -170,6 +173,9 @@
     platformAdminReady = true;
     isPlatformAdmin = false;
     adminSection = 'context';
+    editingProjectId = null;
+    projectDraftName = '';
+    projectDraftClient = '';
     clearFeedback();
   }
 
@@ -190,6 +196,9 @@
   $: inviteableEmployees = employees.filter((employee) => employee.active && Boolean(employee.email?.trim()));
   $: if (selectedInviteEmployeeId && !inviteableEmployees.some((employee) => employee.id === selectedInviteEmployeeId)) {
     selectedInviteEmployeeId = '';
+  }
+  $: if (editingProjectId && !orgProjects.some((project) => project.id === editingProjectId)) {
+    cancelProjectEdit();
   }
   $: currentOrgProject = orgProjects.find((project) => project.id === activeProjectId) ?? null;
   $: currentProjectAttached = Boolean(currentOrgProject);
@@ -408,6 +417,69 @@
     notice = 'Aktywny projekt został podpięty do organizacji.';
   }
 
+  function startProjectEdit(project: CloudProject) {
+    editingProjectId = project.id;
+    projectDraftName = project.name || '';
+    projectDraftClient = project.client || '';
+    clearFeedback();
+  }
+
+  function cancelProjectEdit() {
+    editingProjectId = null;
+    projectDraftName = '';
+    projectDraftClient = '';
+  }
+
+  async function saveProjectEdit(project: CloudProject) {
+    clearFeedback();
+    const name = projectDraftName.trim();
+    const client = projectDraftClient.trim();
+    if (!name) {
+      error = 'Podaj nazwę projektu.';
+      return;
+    }
+
+    const nextProjectMeta = normalizeProjectMeta(
+      typeof project.payload?.['projectMeta'] === 'object' && project.payload['projectMeta'] !== null
+        ? (project.payload['projectMeta'] as Record<string, unknown>)
+        : null,
+      {
+        name,
+        client
+      }
+    );
+    const nextPayload = {
+      ...(project.payload || {}),
+      projectMeta: nextProjectMeta
+    };
+
+    saving = true;
+    const [metaRes, payloadRes] = await Promise.all([
+      updateProjectMeta(project.id, {
+        name,
+        client: client || null
+      }),
+      updateProjectPayload(project.id, nextPayload)
+    ]);
+    saving = false;
+    if (metaRes.error || payloadRes.error) {
+      error = metaRes.error?.message || payloadRes.error?.message || 'Nie udało się zapisać zmian projektu.';
+      return;
+    }
+
+    if (project.id === activeProjectId) {
+      projectMeta.set(nextProjectMeta);
+      currentProject.update((state) => ({
+        ...state,
+        name
+      }));
+    }
+
+    cancelProjectEdit();
+    await refreshAll(selectedOrgId);
+    notice = 'Dane projektu zostały zaktualizowane.';
+  }
+
   async function onCreateEmployee() {
     clearFeedback();
     if (!selectedOrgId) {
@@ -616,6 +688,17 @@
 
   function projectBadge(project: CloudProject): string {
     return project.id === activeProjectId ? 'Aktywny teraz' : 'Projekt organizacji';
+  }
+
+  function invitationStatusLabel(invitation: CloudOrganizationInvitation): string {
+    return invitation.accepted_at ? 'Zalogował się' : 'Oczekuje';
+  }
+
+  function formatDateTime(value: string): string {
+    return new Date(value).toLocaleString('pl-PL', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
   }
 
   function goToSection(sectionId: AdminSection) {
@@ -912,15 +995,40 @@
             {:else}
               <div class="admin-list">
                 {#each orgProjects as project}
-                  <article class="admin-list-card" data-active={project.id === activeProjectId ? '1' : '0'}>
-                    <div>
-                      <strong>{project.name}</strong>
-                      <span>{project.client || 'Bez przypisanego klienta'}</span>
+                  <article class:admin-list-card-stack={editingProjectId === project.id} class="admin-list-card" data-active={project.id === activeProjectId ? '1' : '0'}>
+                    <div class="admin-project-card-head">
+                      <div>
+                        <strong>{project.name}</strong>
+                        <span>{project.client || 'Bez przypisanego klienta'}</span>
+                      </div>
+                      <div class="admin-chip-stack">
+                        <span class="admin-chip">{projectBadge(project)}</span>
+                        <span class="admin-chip admin-chip-muted">{new Date(project.updated_at).toLocaleDateString('pl-PL')}</span>
+                      </div>
                     </div>
-                    <div class="admin-chip-stack">
-                      <span class="admin-chip">{projectBadge(project)}</span>
-                      <span class="admin-chip admin-chip-muted">{new Date(project.updated_at).toLocaleDateString('pl-PL')}</span>
-                    </div>
+
+                    {#if editingProjectId === project.id}
+                      <div class="admin-inline-form">
+                        <div class="admin-form-grid">
+                          <label>
+                            <span>Nazwa projektu</span>
+                            <input bind:value={projectDraftName} placeholder="np. Rozbudowa hali magazynowej" />
+                          </label>
+                          <label>
+                            <span>Klient</span>
+                            <input bind:value={projectDraftClient} placeholder="np. ElektroPro Sp. z o.o." />
+                          </label>
+                        </div>
+                        <div class="admin-inline-actions">
+                          <button class="admin-primary-btn" type="button" on:click={() => saveProjectEdit(project)} disabled={saving}>Zapisz</button>
+                          <button class="admin-ghost-btn" type="button" on:click={cancelProjectEdit}>Anuluj</button>
+                        </div>
+                      </div>
+                    {:else}
+                      <div class="admin-inline-actions">
+                        <button class="admin-ghost-btn" type="button" on:click={() => startProjectEdit(project)} disabled={saving}>Edytuj</button>
+                      </div>
+                    {/if}
                   </article>
                 {/each}
               </div>
@@ -1154,16 +1262,30 @@
                     <article class="admin-list-card">
                       <div>
                         <strong>{invitation.email}</strong>
-                        <span>{ROLE_LABEL[invitation.role]} • ważne do {new Date(invitation.expires_at).toLocaleDateString('pl-PL')}</span>
+                        <span>
+                          {ROLE_LABEL[invitation.role]}
+                          {#if invitation.accepted_at}
+                            • zalogował się {formatDateTime(invitation.accepted_at)}
+                          {:else}
+                            • ważne do {new Date(invitation.expires_at).toLocaleDateString('pl-PL')}
+                          {/if}
+                        </span>
                       </div>
-                      <button class="admin-danger-btn" type="button" on:click={() => onDeleteInvitation(invitation.id)} disabled={!canInviteMembers || saving}>
-                        Odwołaj
-                      </button>
+                      <div class="admin-inline-actions">
+                        <span class:admin-chip-accent={Boolean(invitation.accepted_at)} class="admin-chip">
+                          {invitationStatusLabel(invitation)}
+                        </span>
+                        {#if !invitation.accepted_at}
+                          <button class="admin-danger-btn" type="button" on:click={() => onDeleteInvitation(invitation.id)} disabled={!canInviteMembers || saving}>
+                            Odwołaj
+                          </button>
+                        {/if}
+                      </div>
                     </article>
                   {/each}
                 </div>
               {:else}
-                <div class="admin-empty-inline">Brak oczekujących zaproszeń do tej organizacji.</div>
+                <div class="admin-empty-inline">Brak wysłanych zaproszeń do tej organizacji.</div>
               {/if}
             {:else}
               <div class="admin-footnote admin-footnote-info">
@@ -1526,6 +1648,7 @@
   .admin-card-head,
   .admin-form-head,
   .admin-employee-head,
+  .admin-project-card-head,
   .admin-active-project {
     display: flex;
     align-items: flex-start;
@@ -1534,6 +1657,7 @@
   }
 
   .admin-card-head > div:first-child,
+  .admin-project-card-head > div:first-child,
   .admin-form-head {
     min-width: 0;
   }

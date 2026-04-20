@@ -12,7 +12,7 @@ import { snapshots } from '../state/snapshots';
 import { worklog, projectSettings } from '../state/worklog';
 import { materials, boms } from '../state/materials';
 import { templates, templateCategories } from '../state/templates';
-import { projectMeta } from '../state/project';
+import { projectMeta, normalizeProjectMeta } from '../state/project';
 import { currentProject } from '../state/currentProject';
 import { getProject, updateProjectPayload, createProject, listProjects } from './projects';
 
@@ -57,8 +57,21 @@ export async function loadFromCloud(projectId: string): Promise<{ error: string 
   const stores = allStores();
   for (const [key, store] of Object.entries(stores)) {
     if (payload[key] !== undefined) {
-      store.set(payload[key]);
+      if (key === 'projectMeta') {
+        store.set(normalizeProjectMeta(payload[key], {
+          name: res.data.name,
+          client: res.data.client || ''
+        }));
+      } else {
+        store.set(payload[key]);
+      }
     }
+  }
+  if (payload.projectMeta === undefined) {
+    projectMeta.set(normalizeProjectMeta(null, {
+      name: res.data.name,
+      client: res.data.client || ''
+    }));
   }
   const payloadProjectName =
     typeof payload.projectMeta === 'object' &&
@@ -84,7 +97,9 @@ export async function pushToCloud(projectId: string): Promise<{ error: string | 
   const stores = allStores();
   const payload: Record<string, unknown> = {};
   for (const [key, store] of Object.entries(stores)) {
-    payload[key] = get(store);
+    payload[key] = key === 'projectMeta'
+      ? normalizeProjectMeta(get(store))
+      : get(store);
   }
   currentProject.update((s) => ({ ...s, status: 'saving', error: null }));
   const res = await updateProjectPayload(projectId, payload);
