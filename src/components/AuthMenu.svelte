@@ -1,5 +1,6 @@
 <script lang="ts">
   import { auth, signIn, signUp, signOut, sendMagicLink } from '../lib/state/auth';
+  import { flushCloudSync } from '../lib/cloud/sync';
 
   let open = false;
   let mode: 'signin' | 'signup' | 'magic' = 'signin';
@@ -54,7 +55,10 @@
   }
 
   async function doSignOut() {
+    busy = true;
+    await flushCloudSync();
     await signOut();
+    busy = false;
     open = false;
   }
 

@@ -4,7 +4,7 @@
   import { collectLeaves } from '../lib/utils/wbs';
   import { theme } from '../lib/state/theme';
   import { currentProject } from '../lib/state/currentProject';
-  import { pushToCloud } from '../lib/cloud/sync';
+  import { flushCloudSync } from '../lib/cloud/sync';
   import { onMount } from 'svelte';
 
   $: leavesCount = collectLeaves($tree).length;
@@ -13,6 +13,7 @@
     if (!$currentProject.id) return null;
     switch ($currentProject.status) {
       case 'loading': return 'Ładowanie…';
+      case 'queued':  return 'Oczekuje zapisu';
       case 'saving':  return 'Zapisywanie…';
       case 'synced':  return $currentProject.lastSyncedAt
         ? 'Zsync. ' + $currentProject.lastSyncedAt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
@@ -24,7 +25,7 @@
 
   async function forceSync() {
     if (!$currentProject.id) return;
-    await pushToCloud($currentProject.id);
+    await flushCloudSync();
   }
 
   let online = typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -71,7 +72,7 @@
   {#if syncLabel}
     <div class="sb-sep"></div>
     <button class="sb-sync" class:sb-sync-err={$currentProject.status === 'error'} on:click={forceSync} title={$currentProject.name + ($currentProject.error ? ' — ' + $currentProject.error : '')}>
-      <span class="sb-dot" class:sb-dot-online={$currentProject.status === 'synced'} class:sb-dot-saving={$currentProject.status === 'saving' || $currentProject.status === 'loading'} class:sb-dot-err={$currentProject.status === 'error'}></span>
+      <span class="sb-dot" class:sb-dot-online={$currentProject.status === 'synced'} class:sb-dot-saving={$currentProject.status === 'saving' || $currentProject.status === 'loading' || $currentProject.status === 'queued'} class:sb-dot-err={$currentProject.status === 'error'}></span>
       ☁ {syncLabel}
     </button>
   {/if}

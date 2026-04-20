@@ -5,7 +5,7 @@
  */
 import { writable } from 'svelte/store';
 
-export type SyncStatus = 'idle' | 'loading' | 'saving' | 'synced' | 'error';
+export type SyncStatus = 'idle' | 'loading' | 'queued' | 'saving' | 'synced' | 'error';
 
 export interface CurrentProjectState {
   id: string | null;

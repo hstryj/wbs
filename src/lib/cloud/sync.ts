@@ -38,6 +38,7 @@ function allStores(): Record<string, Writable<any>> {
 }
 
 let stopFn: (() => void) | null = null;
+let flushFn: (() => Promise<{ error: string | null }>) | null = null;
 
 /**
  * Załaduj payload z cloud'a do wszystkich store'ów. Nie startuje sync —
@@ -95,6 +96,12 @@ export async function pushToCloud(projectId: string): Promise<{ error: string | 
   return { error: null };
 }
 
+/** Natychmiast wypchnij oczekujące zmiany aktywnego projektu. */
+export async function flushCloudSync(): Promise<{ error: string | null }> {
+  if (!flushFn) return { error: null };
+  return flushFn();
+}
+
 /**
  * Uruchom ciągłą synchronizację z debounced save'em. Zwraca stop().
  * W komponentach/App.svelte wywołuj startCloudSync(id) gdy user się
@@ -107,13 +114,42 @@ export function startCloudSync(projectId: string): () => void {
   const stores = allStores();
   let timer: ReturnType<typeof setTimeout> | null = null;
   let hydrating = true;
+  let flushing: Promise<{ error: string | null }> | null = null;
 
   function scheduleSave() {
     if (hydrating) return; // nie zapisuj w czasie gdy sami ładujemy stan
     if (timer) clearTimeout(timer);
+    currentProject.update((s) => ({
+      ...s,
+      status: s.status === 'saving' ? s.status : 'queued',
+      error: null
+    }));
     timer = setTimeout(() => {
-      pushToCloud(projectId).catch(() => {/* error już w store */});
+      flushNow().catch(() => {/* error już w store */});
     }, 1500);
+  }
+
+  async function flushNow(): Promise<{ error: string | null }> {
+    if (hydrating) return { error: null };
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    if (flushing) return flushing;
+    flushing = pushToCloud(projectId).finally(() => {
+      flushing = null;
+    });
+    return flushing;
+  }
+
+  function onVisibilityChange() {
+    if (document.visibilityState === 'hidden') {
+      flushNow().catch(() => {/* error już w store */});
+    }
+  }
+
+  function onPageHide() {
+    flushNow().catch(() => {/* error już w store */});
   }
 
   // Subscribe do każdego store'a
@@ -122,12 +158,29 @@ export function startCloudSync(projectId: string): () => void {
     unsubs.push(store.subscribe(() => scheduleSave()));
   }
 
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibilityChange);
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('beforeunload', onPageHide);
+  }
+
   // Ustaw hydrating=false po microtasku (pierwsze subscribe wartości już się odpaliły)
   queueMicrotask(() => { hydrating = false; });
 
+  flushFn = flushNow;
   stopFn = () => {
     unsubs.forEach((u) => u());
     if (timer) clearTimeout(timer);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('beforeunload', onPageHide);
+    }
+    flushFn = null;
     stopFn = null;
   };
   return stopFn;
