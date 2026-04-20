@@ -183,6 +183,7 @@
     gap: 20px;
     align-items: stretch;
     margin: auto 0;
+    min-width: 0;
   }
 
   .auth-gate-hero,
@@ -261,6 +262,8 @@
     flex-direction: column;
     gap: 16px;
     color: var(--text-primary);
+    min-width: 0;
+    overflow: hidden;
   }
 
   .auth-gate-card-head {
@@ -425,6 +428,7 @@
     .auth-gate-shell {
       gap: 12px;
       min-height: 100svh;
+      overflow-x: clip;
     }
 
     .auth-gate-card {
@@ -448,21 +452,34 @@
     }
 
     .auth-gate-tabs {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      -webkit-overflow-scrolling: touch;
+      overflow: visible;
+      padding-bottom: 0;
     }
 
     .auth-gate-tabs button {
-      flex: 1 0 auto;
-      min-width: 118px;
+      min-width: 0;
+      width: 100%;
+      padding: 0 10px;
+      line-height: 1.2;
+    }
+
+    .auth-gate-tabs button:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .auth-gate-rail {
+      display: grid;
+      grid-template-columns: 1fr;
+      overflow: visible;
+      gap: 10px;
     }
 
     .auth-gate-tile {
-      flex-basis: min(82vw, 240px);
-      min-width: min(82vw, 240px);
+      flex-basis: auto;
+      min-width: 0;
     }
 
     .auth-gate-card-head strong {
@@ -491,6 +508,28 @@
     .auth-gate-card {
       margin-top: -16px;
       padding: 16px 12px calc(16px + env(safe-area-inset-bottom));
+    }
+
+    .auth-gate-card-head {
+      gap: 6px;
+    }
+
+    .auth-gate-card-head strong {
+      font-size: 22px;
+      line-height: 1.05;
+    }
+
+    .auth-gate-tabs {
+      grid-template-columns: 1fr;
+    }
+
+    .auth-gate-tabs button:last-child {
+      grid-column: auto;
+    }
+
+    .auth-gate-tabs button,
+    .auth-gate-submit {
+      min-height: 46px;
     }
 
     .auth-gate-hero p,

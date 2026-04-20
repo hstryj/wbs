@@ -92,6 +92,20 @@ export async function getOrganization(id: string): Promise<{ data: CloudOrganiza
   return { data: res.data as CloudOrganization | null, error: res.error };
 }
 
+export async function getMyPlatformAdminStatus(): Promise<{ data: boolean; error: PostgrestError | null }> {
+  const c = requireClient();
+  const user = (await c.auth.getUser()).data.user;
+  if (!user) return { data: false, error: null };
+
+  const res = await c
+    .from('platform_admins')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  return { data: Boolean(res.data), error: res.error };
+}
+
 export async function createOrganization(name: string, slug?: string): Promise<{ data: CloudOrganization | null; error: PostgrestError | null }> {
   const c = requireClient();
   const rpcRes = await c.rpc('create_organization_for_me', {
