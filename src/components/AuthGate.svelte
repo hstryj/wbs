@@ -159,6 +159,29 @@
 
 <style>
   .auth-gate {
+    --auth-page-bg:
+      radial-gradient(circle at top left, rgba(46, 117, 182, 0.22), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(18, 52, 93, 0.18), transparent 28%),
+      linear-gradient(180deg, #f3f8fc 0%, #e8f0f8 100%);
+    --auth-card-bg: rgba(255, 255, 255, 0.98);
+    --auth-card-border: rgba(20, 53, 95, 0.1);
+    --auth-card-shadow: 0 22px 42px rgba(15, 23, 42, 0.1);
+    --auth-heading: #172b4d;
+    --auth-label: #6b778c;
+    --auth-input-bg: #ffffff;
+    --auth-input-border: #c7d1db;
+    --auth-input-border-hover: #b3bfcd;
+    --auth-input-text: #172b4d;
+    --auth-input-placeholder: #7a869a;
+    --auth-tab-bg: #f4f5f7;
+    --auth-tab-border: #dfe1e6;
+    --auth-tab-text: #5e6c84;
+    --auth-tab-active-bg: #e9f2ff;
+    --auth-tab-active-border: #b3d4ff;
+    --auth-tab-active-text: #0c66e4;
+    --auth-note: #6b778c;
+    --auth-submit-bg: linear-gradient(135deg, #0c66e4 0%, #1d7af1 100%);
+    --auth-submit-bg-hover: linear-gradient(135deg, #0a5ed1 0%, #136ee0 100%);
     min-height: 100vh;
     min-height: 100svh;
     padding:
@@ -166,14 +189,21 @@
       max(24px, env(safe-area-inset-right))
       max(24px, env(safe-area-inset-bottom))
       max(24px, env(safe-area-inset-left));
-    background:
-      radial-gradient(circle at top left, rgba(46, 117, 182, 0.22), transparent 32%),
-      radial-gradient(circle at bottom right, rgba(18, 52, 93, 0.18), transparent 28%),
-      linear-gradient(180deg, #f3f8fc 0%, #e8f0f8 100%);
+    background: var(--auth-page-bg);
     display: flex;
     align-items: stretch;
     justify-content: center;
     overflow: auto;
+  }
+
+  :global([data-theme='dark']) .auth-gate {
+    --auth-page-bg:
+      radial-gradient(circle at top left, rgba(76, 154, 255, 0.18), transparent 34%),
+      radial-gradient(circle at bottom right, rgba(17, 43, 77, 0.2), transparent 28%),
+      linear-gradient(180deg, #0d1626 0%, #122033 100%);
+    --auth-card-bg: rgba(255, 255, 255, 0.97);
+    --auth-card-border: rgba(123, 156, 192, 0.18);
+    --auth-card-shadow: 0 24px 48px rgba(0, 0, 0, 0.24);
   }
 
   .auth-gate-shell {
@@ -189,8 +219,8 @@
   .auth-gate-hero,
   .auth-gate-card {
     border-radius: 32px;
-    border: 1px solid rgba(20, 53, 95, 0.08);
-    box-shadow: 0 22px 42px rgba(15, 23, 42, 0.1);
+    border: 1px solid var(--auth-card-border);
+    box-shadow: var(--auth-card-shadow);
   }
 
   .auth-gate-hero {
@@ -241,8 +271,9 @@
     gap: 8px;
     padding: 18px;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
   .auth-gate-tile strong {
@@ -256,12 +287,12 @@
   }
 
   .auth-gate-card {
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--auth-card-bg);
     padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    color: var(--text-primary);
+    color: var(--auth-input-text);
     min-width: 0;
     overflow: hidden;
   }
@@ -277,14 +308,14 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--auth-label);
   }
 
   .auth-gate-card-head strong {
     font-size: 28px;
     line-height: 1;
     letter-spacing: -0.04em;
-    color: #12345d;
+    color: var(--auth-heading);
   }
 
   .auth-gate-tabs {
@@ -296,18 +327,28 @@
   .auth-gate-tabs button {
     min-height: 44px;
     border-radius: 14px;
-    border: 1px solid var(--border);
-    background: var(--bg-muted);
-    color: var(--text-secondary);
+    border: 1px solid var(--auth-tab-border);
+    background: var(--auth-tab-bg);
+    color: var(--auth-tab-text);
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
+    transition: border-color .14s ease, background .14s ease, color .14s ease, box-shadow .14s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .auth-gate-tabs button:hover {
+    border-color: #c1d7f7;
+    color: var(--auth-heading);
   }
 
   .auth-gate-tabs button.active {
-    border-color: rgba(46, 117, 182, 0.3);
-    background: var(--brand-primary-bg);
-    color: var(--brand-primary-dark);
+    border-color: var(--auth-tab-active-border);
+    background: var(--auth-tab-active-bg);
+    color: var(--auth-tab-active-text);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 1px 2px rgba(9, 30, 66, 0.08);
   }
 
   .auth-gate-form {
@@ -325,22 +366,38 @@
   .auth-gate-field span {
     font-size: 12px;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--auth-label);
   }
 
   .auth-gate-field input {
     min-height: 48px;
     border-radius: 16px;
-    border: 1px solid var(--border-strong);
-    background: var(--bg-surface);
-    color: var(--text-primary);
+    border: 1px solid var(--auth-input-border);
+    background: var(--auth-input-bg);
+    color: var(--auth-input-text);
     padding: 0 14px;
     font-size: 15px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 1px 1px rgba(9, 30, 66, 0.04);
+    transition: border-color .14s ease, box-shadow .14s ease, background .14s ease;
+  }
+
+  .auth-gate-field input::placeholder {
+    color: var(--auth-input-placeholder);
+    opacity: 1;
+  }
+
+  .auth-gate-field input:hover {
+    border-color: var(--auth-input-border-hover);
   }
 
   .auth-gate-field input:focus {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 1px;
+    outline: none;
+    border-color: #0c66e4;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.92),
+      0 0 0 3px rgba(12, 102, 228, 0.18);
   }
 
   .auth-gate-alert {
@@ -366,11 +423,18 @@
     min-height: 48px;
     border: none;
     border-radius: 18px;
-    background: linear-gradient(135deg, #12345d 0%, #2e75b6 100%);
+    background: var(--auth-submit-bg);
     color: #fff;
     font-size: 14px;
     font-weight: 800;
     cursor: pointer;
+    transition: filter .14s ease, transform .08s ease, box-shadow .14s ease;
+    box-shadow: 0 10px 20px rgba(12, 102, 228, 0.18);
+  }
+
+  .auth-gate-submit:hover:not(:disabled) {
+    background: var(--auth-submit-bg-hover);
+    box-shadow: 0 14px 24px rgba(12, 102, 228, 0.22);
   }
 
   .auth-gate-submit:disabled {
@@ -378,11 +442,15 @@
     cursor: wait;
   }
 
+  .auth-gate-submit:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
   .auth-gate-note {
     margin: 0;
     font-size: 12px;
     line-height: 1.5;
-    color: var(--text-secondary);
+    color: var(--auth-note);
   }
 
   @media (max-width: 900px) {
@@ -421,8 +489,8 @@
         max(12px, env(safe-area-inset-bottom))
         max(10px, env(safe-area-inset-left));
       background:
-        radial-gradient(circle at top center, rgba(46, 117, 182, 0.18), transparent 36%),
-        linear-gradient(180deg, #eef5fb 0%, #e6eef7 100%);
+        radial-gradient(circle at top center, rgba(46, 117, 182, 0.16), transparent 36%),
+        linear-gradient(180deg, #eef4fa 0%, #e7eef6 100%);
     }
 
     .auth-gate-shell {
