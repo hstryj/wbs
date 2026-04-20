@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
   import { projectMeta, STATUS_LABEL, fmtPln, type ProjectStatus } from '../lib/state/project';
   import { projectSettings } from '../lib/state/worklog';
   import { tree } from '../lib/state/tree';
+  import { currentProject } from '../lib/state/currentProject';
+  import { updateProjectMeta } from '../lib/cloud/projects';
   import { collectLeaves } from '../lib/utils/wbs';
   import { todayISO, daysBetween } from '../lib/utils/dates';
 
@@ -17,10 +20,30 @@
   function cancel() {
     editing = false;
   }
-  function save() {
+  function onWindowKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') cancel();
+  }
+  function onOverlayKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
+  }
+  async function save() {
     projectMeta.set({ ...draft });
     projectSettings.set({ ...draftSettings });
+    currentProject.update((state) => ({
+      ...state,
+      name: draft.name.trim() || state.name
+    }));
     editing = false;
+
+    const projectId = get(currentProject).id;
+    if (!projectId) return;
+    await updateProjectMeta(projectId, {
+      name: draft.name.trim() || 'Nowy projekt',
+      client: draft.client.trim() || null
+    });
   }
 
   const STATUS_OPTIONS: ProjectStatus[] = ['aktywny', 'wstrzymany', 'zakończony', 'planowany'];
@@ -40,6 +63,8 @@
   $: leavesCount = collectLeaves($tree).length;
 
 </script>
+
+<svelte:window on:keydown={onWindowKeydown} />
 
 <div class="proj-ribbon">
   <div class="ribbon-main">
@@ -89,6 +114,7 @@
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
       <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
     </svg>
+    <span class="ribbon-edit-label">Edytuj projekt</span>
   </button>
 </div>
 
@@ -96,65 +122,79 @@
   <div
     class="modal-bg"
     on:click|self={cancel}
-    on:keydown={(e) => e.key === 'Escape' && cancel()}
-    role="dialog"
-    aria-modal="true"
-    aria-label="Edycja metadanych projektu"
-    tabindex="-1"
+    on:keydown|self={onOverlayKeydown}
+    role="button"
+    tabindex="0"
+    aria-label="Zamknij edycję metadanych projektu"
   >
-    <div class="modal-box">
-      <h3>Metadane projektu</h3>
-      <div class="form-grid">
-        <label>Numer kontraktu
-          <input type="text" bind:value={draft.code} placeholder="np. 2026/ME-014" />
-        </label>
-        <label>Status
-          <select bind:value={draft.status}>
-            {#each STATUS_OPTIONS as s}
-              <option value={s}>{STATUS_LABEL[s]}</option>
-            {/each}
-          </select>
-        </label>
-        <label class="form-full">Nazwa projektu
-          <input type="text" bind:value={draft.name} placeholder="np. Moderna Elektro — rozbudowa hali" />
-        </label>
-        <label class="form-full">Klient
-          <input type="text" bind:value={draft.client} placeholder="np. ElektroPro Sp. z o.o." />
-        </label>
-        <label class="form-full">Kierownik projektu
-          <input type="text" bind:value={draft.manager} placeholder="np. J. Kowalski" />
-        </label>
-        <label>Data rozpoczęcia
-          <input type="date" bind:value={draft.dateStart} />
-        </label>
-        <label>Termin zakończenia
-          <input type="date" bind:value={draft.dateEnd} />
-        </label>
-        <label>Budżet planowany (PLN)
-          <input type="number" min="0" step="1000" bind:value={draft.plannedBudget} />
-        </label>
-        <label>Budżet aktualny (PLN)
-          <input type="number" min="0" step="1000" bind:value={draft.actualBudget} />
-        </label>
+    <div class="modal-box project-modal-box" role="dialog" aria-modal="true" aria-label="Edycja metadanych projektu">
+      <div class="project-modal-head">
+        <div class="project-modal-heading">
+          <p class="project-modal-eyebrow">Profil projektu</p>
+          <h3>Metadane projektu</h3>
+        </div>
+        <button class="project-modal-close" on:click={cancel} title="Zamknij edycję projektu">
+          ×
+        </button>
       </div>
 
-      <h3 style="margin-top:18px;font-size:13px;color:var(--text-secondary)">Ustawienia godzin pracy</h3>
-      <div class="form-grid" style="margin-top:4px">
-        <label>Godz./tydzień
-          <input type="number" min="1" max="168" step="1" bind:value={draftSettings.hrsPerWeek} />
-        </label>
-        <label>Start pracy
-          <input type="time" bind:value={draftSettings.start} />
-        </label>
-        <label>Koniec pracy
-          <input type="time" bind:value={draftSettings.end} />
-        </label>
-        <label>Przerwa (min)
-          <input type="number" min="0" max="240" step="15" bind:value={draftSettings.brk} />
-        </label>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
-        <button class="btn" on:click={cancel} style="background:var(--bg-muted);color:var(--text-primary);border-color:var(--border)">Anuluj</button>
+      <section class="project-modal-section">
+        <div class="project-modal-section-title">Podstawowe dane</div>
+        <div class="form-grid">
+          <label>Numer kontraktu
+            <input type="text" bind:value={draft.code} placeholder="np. 2026/ME-014" />
+          </label>
+          <label>Status
+            <select bind:value={draft.status}>
+              {#each STATUS_OPTIONS as s}
+                <option value={s}>{STATUS_LABEL[s]}</option>
+              {/each}
+            </select>
+          </label>
+          <label class="form-full">Nazwa projektu
+            <input type="text" bind:value={draft.name} placeholder="np. Moderna Elektro — rozbudowa hali" />
+          </label>
+          <label class="form-full">Klient
+            <input type="text" bind:value={draft.client} placeholder="np. ElektroPro Sp. z o.o." />
+          </label>
+          <label class="form-full">Kierownik projektu
+            <input type="text" bind:value={draft.manager} placeholder="np. J. Kowalski" />
+          </label>
+          <label>Data rozpoczęcia
+            <input type="date" bind:value={draft.dateStart} />
+          </label>
+          <label>Termin zakończenia
+            <input type="date" bind:value={draft.dateEnd} />
+          </label>
+          <label>Budżet planowany (PLN)
+            <input type="number" min="0" step="1000" bind:value={draft.plannedBudget} />
+          </label>
+          <label>Budżet aktualny (PLN)
+            <input type="number" min="0" step="1000" bind:value={draft.actualBudget} />
+          </label>
+        </div>
+      </section>
+
+      <section class="project-modal-section">
+        <div class="project-modal-section-title">Ustawienia godzin pracy</div>
+        <div class="form-grid project-settings-grid">
+          <label>Godz./tydzień
+            <input type="number" min="1" max="168" step="1" bind:value={draftSettings.hrsPerWeek} />
+          </label>
+          <label>Start pracy
+            <input type="time" bind:value={draftSettings.start} />
+          </label>
+          <label>Koniec pracy
+            <input type="time" bind:value={draftSettings.end} />
+          </label>
+          <label>Przerwa (min)
+            <input type="number" min="0" max="240" step="15" bind:value={draftSettings.brk} />
+          </label>
+        </div>
+      </section>
+
+      <div class="project-modal-actions">
+        <button class="btn project-modal-cancel" on:click={cancel}>Anuluj</button>
         <button class="btn btn-blue" on:click={save}>Zapisz</button>
       </div>
     </div>
@@ -279,9 +319,79 @@
     display: flex;
     align-items: center;
   }
+  .ribbon-edit-label {
+    display: none;
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
   .ribbon-edit:hover {
     color: var(--brand-primary);
     background: var(--brand-primary-bg);
+  }
+
+  .project-modal-box {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .project-modal-box h3 {
+    margin: 0;
+  }
+  .project-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .project-modal-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .project-modal-eyebrow {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-primary);
+  }
+  .project-modal-close {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .project-modal-section {
+    padding: 18px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background:
+      radial-gradient(circle at top right, rgba(46, 117, 182, 0.08), transparent 40%),
+      var(--bg-surface);
+  }
+  .project-modal-section-title {
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .project-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .project-modal-cancel {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+    border-color: var(--border);
   }
 
   .form-grid {
@@ -319,26 +429,122 @@
   @media (max-width: 900px) {
     .proj-ribbon {
       flex-wrap: wrap;
+      border: none;
+      border-radius: 28px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(20, 53, 95, 0.98) 0%, rgba(38, 85, 138, 0.94) 100%);
+      box-shadow: 0 18px 32px rgba(20, 53, 95, 0.16);
     }
     .ribbon-main {
       flex: 1 1 100%;
       border-right: none;
-      border-bottom: 1px solid var(--border);
+      border-bottom: none;
+      padding: 16px;
+    }
+    .ribbon-code {
+      background: rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.86);
+    }
+    .ribbon-name {
+      color: #fff;
+      font-size: 20px;
+      white-space: normal;
+    }
+    .ribbon-client {
+      color: rgba(255, 255, 255, 0.74);
+      white-space: normal;
+    }
+    .ribbon-client strong {
+      color: #fff;
     }
     .ribbon-meta {
       flex: 1 1 100%;
-      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0 16px 16px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
     }
     .meta-cell {
-      flex: 1 1 50%;
-      border-bottom: 1px solid var(--border-subtle);
+      flex: 0 0 156px;
+      min-width: 156px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      padding: 14px;
+    }
+    .meta-label {
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 6px;
+    }
+    .meta-value {
+      color: #fff;
+      white-space: normal;
+      line-height: 1.35;
+    }
+    .meta-extra {
+      color: rgba(255, 255, 255, 0.72);
+      display: block;
+      margin: 4px 0 0;
     }
     .ribbon-edit {
       border-left: none;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
       width: 100%;
       justify-content: center;
-      padding: 8px;
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+      gap: 8px;
+    }
+    .ribbon-edit-label {
+      display: inline;
+    }
+    .modal-bg {
+      align-items: flex-end;
+      padding: 12px;
+    }
+    .project-modal-box {
+      width: 100%;
+      max-width: none;
+      max-height: min(88vh, 760px);
+      overflow-y: auto;
+      padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
+      border-radius: 28px;
+    }
+    .project-modal-section {
+      padding: 16px;
+      border-radius: 24px;
+    }
+    .form-grid,
+    .project-settings-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .form-full {
+      grid-column: auto;
+    }
+    .project-modal-actions {
+      flex-direction: column-reverse;
+    }
+    .project-modal-actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .ribbon-main {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .ribbon-meta {
+      padding: 0 12px 12px;
+    }
+    .meta-cell {
+      flex-basis: 144px;
+      min-width: 144px;
     }
   }
 </style>

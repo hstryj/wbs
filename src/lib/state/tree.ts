@@ -14,33 +14,86 @@ export const totalWeight = derived(tree, ($t) => rootWeightSum($t));
 export const weightedTotal = derived(tree, ($t) => rootWeightedSum($t));
 
 /** Add a new top-level project */
-export function addRoot(): void {
-  tree.update(($t) => [...$t, mkNode('', 0, 0, '', true)]);
+export function addRoot(name = 'Punkt główny'): number {
+  const root = mkNode(name, 0, 0, '', true);
+  tree.update(($t) => [...$t, root]);
   logChange('edit', 'Dodano punkt główny');
+  return root.id;
 }
 
 /** Add a child under the given parent id */
-export function addChild(parentId: number): void {
+export function addChild(parentId: number): number | null {
+  let createdId: number | null = null;
   tree.update(($t) => {
     const copy = structuredClone($t);
     const parent = findNode(copy, parentId);
-    if (parent) parent.children.push(mkNode('', 0, 0, ''));
+    if (parent) {
+      const child = mkNode(parent.isProject ? 'Nowa sekcja' : 'Nowe zadanie', 0, 0, '');
+      parent.collapsed = false;
+      parent.children.push(child);
+      createdId = child.id;
+    }
     return copy;
   });
   logChange('edit', 'Dodano podpunkt');
+  return createdId;
 }
 
 /** Add a sibling after the given node id */
-export function addSibling(nodeId: number): void {
+export function addSibling(nodeId: number): number | null {
+  let createdId: number | null = null;
   tree.update(($t) => {
     const copy = structuredClone($t);
     const parent = findParent(copy, nodeId);
     const list = parent ? parent.children : copy;
     const idx = list.findIndex((n) => n.id === nodeId);
-    if (idx >= 0) list.splice(idx + 1, 0, mkNode('', 0, 0, ''));
+    if (idx >= 0) {
+      const sibling = mkNode(parent?.isProject ? 'Nowa sekcja' : 'Nowe zadanie', 0, 0, '');
+      list.splice(idx + 1, 0, sibling);
+      createdId = sibling.id;
+    }
     return copy;
   });
   logChange('edit', 'Dodano element obok');
+  return createdId;
+}
+
+/** Quick add from toolbar/mobile CTA — always creates a visible editable node. */
+export function quickAddTask(): number | null {
+  let createdId: number | null = null;
+
+  tree.update(($t) => {
+    const copy = structuredClone($t);
+
+    if (copy.length === 0) {
+      const root = mkNode('Punkt główny', 0, 0, '', true);
+      const firstTask = mkNode('Nowa sekcja', 0, 0, '');
+      root.children.push(firstTask);
+      copy.push(root);
+      createdId = firstTask.id;
+      return copy;
+    }
+
+    const firstProject = copy.find((node) => node.isProject);
+    if (firstProject) {
+      const child = mkNode('Nowa sekcja', 0, 0, '');
+      firstProject.collapsed = false;
+      firstProject.children.push(child);
+      createdId = child.id;
+      return copy;
+    }
+
+    const task = mkNode('Nowe zadanie', 0, 0, '');
+    copy.push(task);
+    createdId = task.id;
+    return copy;
+  });
+
+  if (createdId !== null) {
+    flashWarn('Dodano nowy element do WBS', 'info', 2200);
+    logChange('edit', 'Dodano element z szybkiej akcji');
+  }
+  return createdId;
 }
 
 /** Delete a node by id */

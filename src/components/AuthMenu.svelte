@@ -58,10 +58,27 @@
     open = false;
   }
 
+  function closeModal() {
+    open = false;
+  }
+
+  function onWindowKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') open = false;
+  }
+
+  function onOverlayKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+      e.preventDefault();
+      closeModal();
+    }
+  }
+
   function avatar(email: string): string {
     return email.charAt(0).toUpperCase();
   }
 </script>
+
+<svelte:window on:keydown={onWindowKeydown} />
 
 {#if !$auth.configured}
   <!-- Supabase not configured — show muted badge z wyjaśnieniem -->
@@ -88,13 +105,20 @@
   <button class="auth-btn auth-login" on:click={() => (open = true)}>Zaloguj</button>
 
   {#if open}
-    <div class="auth-modal-bg" on:click|self={() => (open = false)} on:keydown={(e) => e.key === 'Escape' && (open = false)} role="dialog" aria-modal="true" tabindex="-1">
-      <div class="auth-modal">
+    <div
+      class="auth-modal-bg"
+      on:click|self={closeModal}
+      on:keydown|self={onOverlayKeydown}
+      role="button"
+      tabindex="0"
+      aria-label="Zamknij okno logowania"
+    >
+      <div class="auth-modal" role="dialog" aria-modal="true" aria-label="Logowanie do projektu">
         <header class="auth-modal-hdr">
           <h3>
             {#if mode === 'signin'}Zaloguj się{:else if mode === 'signup'}Utwórz konto{:else}Link logowania{/if}
           </h3>
-          <button class="auth-close" on:click={() => (open = false)} aria-label="Zamknij">✕</button>
+          <button class="auth-close" on:click={closeModal} aria-label="Zamknij">✕</button>
         </header>
 
         <div class="auth-modal-body">

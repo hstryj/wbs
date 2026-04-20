@@ -1,13 +1,16 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { WbsNode, Priority, RAG } from '../../lib/types';
   import { addChild, delNode, setField, setWeight, toggleCollapse } from '../../lib/state/tree';
-  import { colVis } from '../../lib/state/ui';
+  import { colVis, pendingFocusNodeId } from '../../lib/state/ui';
   import { people, pName, pRole } from '../../lib/state/people';
   import { PRIORITIES } from '../../lib/utils/priority';
   import { isLeaf, childWeightSum, nodeDonePct, nodeWtd, barColor, depthCfg, depthOf } from '../../lib/utils/wbs';
   import { todayISO } from '../../lib/utils/dates';
 
   export let node: WbsNode;
+
+  let nameInput: HTMLInputElement;
 
   $: depth = depthOf(node._code);
   $: cfg = depthCfg(depth);
@@ -30,6 +33,18 @@
   function onRagChange(e: Event)  { setField(node.id, 'rag', (e.target as HTMLSelectElement).value as RAG); }
   function onStartChange(e: Event){ setField(node.id, 'dateStart', (e.target as HTMLInputElement).value); }
   function onEndChange(e: Event)  { setField(node.id, 'dateEnd', (e.target as HTMLInputElement).value); }
+  function addAndFocus() {
+    const createdId = addChild(node.id);
+    if (createdId !== null) pendingFocusNodeId.set(createdId);
+  }
+
+  $: if ($pendingFocusNodeId === node.id && nameInput) {
+    tick().then(() => {
+      nameInput?.focus();
+      nameInput?.select();
+      pendingFocusNodeId.set(null);
+    });
+  }
 </script>
 
 <tr style="background:{cfg.bg}">
@@ -42,6 +57,7 @@
         <span style="display:inline-block;width:18px"></span>
       {/if}
       <input
+        bind:this={nameInput}
         class="iname"
         style="font-size:{cfg.fs};font-weight:{cfg.fw};color:{cfg.fc}"
         value={node.name}
@@ -132,7 +148,7 @@
   {/if}
   <td>
     <div class="row-actions">
-      <button class="btn-add-child" on:click={() => addChild(node.id)}>+ Dodaj podpunkt</button>
+      <button class="btn-add-child" on:click={addAndFocus}>+ Dodaj podpunkt</button>
       <button class="btn-del" on:click={() => delNode(node.id)}>✕</button>
     </div>
   </td>

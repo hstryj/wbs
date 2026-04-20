@@ -59,10 +59,16 @@ export async function loadFromCloud(projectId: string): Promise<{ error: string 
       store.set(payload[key]);
     }
   }
+  const payloadProjectName =
+    typeof payload.projectMeta === 'object' &&
+    payload.projectMeta !== null &&
+    typeof (payload.projectMeta as Record<string, unknown>).name === 'string'
+      ? String((payload.projectMeta as Record<string, unknown>).name)
+      : '';
   currentProject.update((s) => ({
     ...s,
     id: projectId,
-    name: res.data!.name,
+    name: payloadProjectName || res.data!.name,
     status: 'synced',
     lastSyncedAt: new Date()
   }));
@@ -161,7 +167,8 @@ export async function autoOpenProject(userEmail: string): Promise<{ projectId: s
   for (const [key, store] of Object.entries(stores)) {
     payload[key] = get(store);
   }
-  const defaultName = `Projekt ${userEmail.split('@')[0]}`;
+  const initialMeta = get(projectMeta);
+  const defaultName = initialMeta.name.trim() || `Projekt ${userEmail.split('@')[0]}`;
   const created = await createProject(defaultName, payload);
   if (created.error || !created.data) {
     const msg = created.error?.message || 'Nie udało się utworzyć projektu';

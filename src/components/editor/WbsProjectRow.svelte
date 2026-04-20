@@ -1,9 +1,13 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { WbsNode } from '../../lib/types';
   import { addChild, delNode, setField, toggleCollapse } from '../../lib/state/tree';
+  import { pendingFocusNodeId } from '../../lib/state/ui';
   import { childWeightSum, childWeightedSum } from '../../lib/utils/wbs';
 
   export let node: WbsNode;
+
+  let titleInput: HTMLInputElement;
 
   $: canToggle = node.children.length > 0;
   $: progress = (() => {
@@ -16,6 +20,19 @@
   function onTitleInput(e: Event) {
     setField(node.id, 'name', (e.target as HTMLInputElement).value);
   }
+
+  function addAndFocus() {
+    const createdId = addChild(node.id);
+    if (createdId !== null) pendingFocusNodeId.set(createdId);
+  }
+
+  $: if ($pendingFocusNodeId === node.id && titleInput) {
+    tick().then(() => {
+      titleInput?.focus();
+      titleInput?.select();
+      pendingFocusNodeId.set(null);
+    });
+  }
 </script>
 
 <tr class="proj-hdr-row">
@@ -27,6 +44,7 @@
         <span style="display:inline-block;width:18px"></span>
       {/if}
       <input
+        bind:this={titleInput}
         class="proj-title-inp"
         value={node.name}
         placeholder="Tytuł punktu głównego..."
@@ -42,7 +60,7 @@
       <span class="proj-hdr-meta" style="margin-left:auto">{node.children.length} elem.</span>
       <button
         class="btn-add-child"
-        on:click={() => addChild(node.id)}
+        on:click={addAndFocus}
         style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.3);font-size:11px;padding:2px 8px"
       >+ Dodaj</button>
       <button

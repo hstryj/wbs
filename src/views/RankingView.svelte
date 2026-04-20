@@ -43,7 +43,7 @@
   }
 </script>
 
-<div class="inner-pane">
+<div class="inner-pane ranking-root">
   <div class="ctrl-bar">
     <label for="rank-sort-select">Sortuj:</label>
     <select id="rank-sort-select" bind:value={sort}>
@@ -59,7 +59,7 @@
     </select>
   </div>
 
-  <div class="tbl-wrap">
+  <div class="tbl-wrap desktop-only">
     <table class="rank">
       <thead>
         <tr>
@@ -110,4 +110,237 @@
       </tbody>
     </table>
   </div>
+
+  <div class="ranking-mobile-list mobile-only">
+    {#if !sorted.length}
+      <div class="ranking-mobile-empty">Brak zadań.</div>
+    {:else}
+      {#each sorted as n, i}
+        {@const pct = n.done || 0}
+        {@const doneColor = pct >= 100 ? '#3B7A1E' : pct > 0 ? '#2E75B6' : '#ED7D31'}
+        {@const ragCls = n.rag === 'R' ? 'rag-R' : n.rag === 'A' ? 'rag-A' : n.rag === 'G' ? 'rag-G' : 'rag-none'}
+        {@const ragLbl = n.rag === 'R' ? 'Red' : n.rag === 'A' ? 'Amber' : n.rag === 'G' ? 'Green' : 'Brak'}
+        {@const overdue = !!(n.dateEnd && n.dateEnd < today && pct < 100)}
+        <article class="ranking-card">
+          <div class="ranking-card-top">
+            <div class="ranking-card-heading">
+              <span class="ranking-rank">#{i + 1}</span>
+              <div class="ranking-code">{n._code ?? '—'}</div>
+              <h3>{n.name || '—'}</h3>
+            </div>
+            <span class={ragCls}>{ragLbl}</span>
+          </div>
+
+          <div class="ranking-progress">
+            <div class="ranking-progress-top">
+              <span>Ukończenie</span>
+              <strong style="color:{doneColor}">{pct}%</strong>
+            </div>
+            <div class="ranking-progress-bar">
+              <div class="ranking-progress-fill" style="width:{Math.min(pct, 100)}%;background:{doneColor}"></div>
+            </div>
+          </div>
+
+          <div class="ranking-rail">
+            <div class="ranking-tile">
+              <span>Termin</span>
+              <strong class:ranking-overdue={overdue}>{n.dateEnd || '—'}</strong>
+            </div>
+            <div class="ranking-tile">
+              <span>Odpowiedzialny</span>
+              <strong>{n.resp || '—'}</strong>
+            </div>
+            <label class="ranking-tile ranking-priority">
+              <span>Priorytet</span>
+              <select value={n.priority || ''} on:change={(e) => onPriorityChange(n.id, e)}>
+                {#each PRIORITIES as p}
+                  <option value={p}>{p || '— brak —'}</option>
+                {/each}
+              </select>
+            </label>
+          </div>
+        </article>
+      {/each}
+    {/if}
+  </div>
 </div>
+
+<style>
+  .ranking-root {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .ranking-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ranking-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 26px;
+    border: 1px solid rgba(20, 53, 95, 0.08);
+    background:
+      radial-gradient(circle at top right, rgba(46, 117, 182, 0.1), transparent 36%),
+      linear-gradient(180deg, rgba(244, 248, 252, 0.94), #ffffff);
+    box-shadow: 0 16px 28px rgba(31, 56, 100, 0.08);
+  }
+
+  .ranking-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .ranking-card-heading {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .ranking-rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(20, 53, 95, 0.08);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .ranking-code {
+    margin-top: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .ranking-card h3 {
+    margin: 6px 0 0;
+    font-size: 18px;
+    line-height: 1.15;
+    color: var(--text-primary);
+  }
+
+  .ranking-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ranking-progress-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .ranking-progress-top strong {
+    font-size: 16px;
+  }
+
+  .ranking-progress-bar {
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--bg-muted);
+  }
+
+  .ranking-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .ranking-rail {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ranking-tile {
+    flex: 0 0 160px;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(20, 53, 95, 0.08);
+  }
+
+  .ranking-tile span {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .ranking-tile strong {
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--text-primary);
+  }
+
+  .ranking-priority select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--bg-surface);
+  }
+
+  .ranking-overdue {
+    color: var(--color-danger);
+  }
+
+  .ranking-mobile-empty {
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px dashed var(--border-strong);
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  @media (max-width: 900px) {
+    .ctrl-bar {
+      padding: 14px;
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+    }
+
+    .ctrl-bar label {
+      width: 100%;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+  }
+
+  @media (max-width: 520px) {
+    .ranking-card-top {
+      flex-direction: column;
+    }
+
+    .ranking-card {
+      padding: 14px;
+      border-radius: 24px;
+    }
+  }
+</style>

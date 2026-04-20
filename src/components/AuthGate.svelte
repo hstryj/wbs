@@ -1,0 +1,435 @@
+<script lang="ts">
+  import { auth, signIn, signUp, sendMagicLink } from '../lib/state/auth';
+
+  let mode: 'signin' | 'signup' | 'magic' = 'signin';
+  let email = '';
+  let password = '';
+  let error: string | null = null;
+  let info: string | null = null;
+  let busy = false;
+
+  $: if (!$auth.configured) {
+    error = null;
+    info = null;
+  }
+
+  function resetFeedback() {
+    error = null;
+    info = null;
+  }
+
+  async function submit() {
+    resetFeedback();
+
+    if (!email.trim()) {
+      error = 'Podaj adres email.';
+      return;
+    }
+
+    if (mode !== 'magic' && !password) {
+      error = 'Podaj hasło.';
+      return;
+    }
+
+    if (mode === 'signup' && password.length < 6) {
+      error = 'Hasło musi mieć minimum 6 znaków.';
+      return;
+    }
+
+    busy = true;
+
+    if (mode === 'signin') {
+      const res = await signIn(email.trim(), password);
+      busy = false;
+      if (res.error) {
+        error = res.error;
+        return;
+      }
+      password = '';
+      return;
+    }
+
+    if (mode === 'signup') {
+      const res = await signUp(email.trim(), password);
+      busy = false;
+      if (res.error) {
+        error = res.error;
+        return;
+      }
+      if (res.needsConfirmation) {
+        info = 'Sprawdź skrzynkę mailową i potwierdź rejestrację.';
+        password = '';
+        return;
+      }
+      password = '';
+      return;
+    }
+
+    const res = await sendMagicLink(email.trim());
+    busy = false;
+    if (res.error) {
+      error = res.error;
+      return;
+    }
+    info = 'Wysłaliśmy jednorazowy link logowania na podany adres.';
+  }
+</script>
+
+<section class="auth-gate">
+  <div class="auth-gate-shell">
+    <div class="auth-gate-hero">
+      <span class="auth-gate-eyebrow">Cloud Workspace</span>
+      <h1>Zaloguj się, aby wejść do projektu</h1>
+      <p>Po zalogowaniu od razu wracasz do swojego projektu, a zmiany synchronizują się między urządzeniami.</p>
+
+      <div class="auth-gate-rail">
+        <div class="auth-gate-tile">
+          <strong>Supabase sync</strong>
+          <span>WBS, ryzyka, ludzie i materiały zapisują się w chmurze.</span>
+        </div>
+        <div class="auth-gate-tile">
+          <strong>Mobilna praca</strong>
+          <span>Ten sam projekt otworzysz na telefonie i desktopie bez ręcznego eksportu.</span>
+        </div>
+        <div class="auth-gate-tile">
+          <strong>Gotowość do publikacji</strong>
+          <span>To jest właściwa warstwa wejścia przed wersją sklepową.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-gate-card">
+      <div class="auth-gate-card-head">
+        <span>Wejście do aplikacji</span>
+        <strong>{mode === 'signin' ? 'Logowanie' : mode === 'signup' ? 'Nowe konto' : 'Magic link'}</strong>
+      </div>
+
+      <div class="auth-gate-tabs" role="tablist" aria-label="Tryb logowania">
+        <button type="button" class:active={mode === 'signin'} on:click={() => { mode = 'signin'; resetFeedback(); }}>Logowanie</button>
+        <button type="button" class:active={mode === 'signup'} on:click={() => { mode = 'signup'; resetFeedback(); }}>Rejestracja</button>
+        <button type="button" class:active={mode === 'magic'} on:click={() => { mode = 'magic'; resetFeedback(); }}>Magic link</button>
+      </div>
+
+      <form class="auth-gate-form" on:submit|preventDefault={submit}>
+        <label class="auth-gate-field">
+          <span>Email</span>
+          <input type="email" bind:value={email} placeholder="jan@firma.pl" autocomplete="email" />
+        </label>
+
+        {#if mode !== 'magic'}
+          <label class="auth-gate-field">
+            <span>Hasło</span>
+            <input type="password" bind:value={password} placeholder="minimum 6 znaków" autocomplete={mode === 'signin' ? 'current-password' : 'new-password'} />
+          </label>
+        {/if}
+
+        {#if error}
+          <div class="auth-gate-alert auth-gate-alert-err">{error}</div>
+        {/if}
+
+        {#if info}
+          <div class="auth-gate-alert auth-gate-alert-ok">{info}</div>
+        {/if}
+
+        <button type="submit" class="auth-gate-submit" disabled={busy}>
+          {#if busy}
+            Trwa logowanie…
+          {:else if mode === 'signin'}
+            Zaloguj się
+          {:else if mode === 'signup'}
+            Utwórz konto
+          {:else}
+            Wyślij link logowania
+          {/if}
+        </button>
+      </form>
+
+      <p class="auth-gate-note">
+        {#if mode === 'signin'}
+          Nie masz jeszcze konta? Przejdź do rejestracji.
+        {:else if mode === 'signup'}
+          Konto tworzymy tylko raz, potem logowanie wraca już prosto do projektu.
+        {:else}
+          Magic link otworzy Ci aplikację bez wpisywania hasła.
+        {/if}
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .auth-gate {
+    min-height: 100vh;
+    padding: 24px;
+    background:
+      radial-gradient(circle at top left, rgba(46, 117, 182, 0.22), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(18, 52, 93, 0.18), transparent 28%),
+      linear-gradient(180deg, #f3f8fc 0%, #e8f0f8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-gate-shell {
+    width: min(1080px, 100%);
+    display: grid;
+    grid-template-columns: 1.2fr minmax(320px, 420px);
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .auth-gate-hero,
+  .auth-gate-card {
+    border-radius: 32px;
+    border: 1px solid rgba(20, 53, 95, 0.08);
+    box-shadow: 0 22px 42px rgba(15, 23, 42, 0.1);
+  }
+
+  .auth-gate-hero {
+    padding: 34px;
+    background: linear-gradient(145deg, #12345d 0%, #255488 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .auth-gate-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .auth-gate-hero h1 {
+    margin: 0;
+    font-size: clamp(32px, 4vw, 52px);
+    line-height: 0.96;
+    letter-spacing: -0.05em;
+  }
+
+  .auth-gate-hero p {
+    margin: 0;
+    max-width: 560px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .auth-gate-rail {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auth-gate-tile {
+    flex: 0 0 min(230px, 70vw);
+    min-width: 210px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .auth-gate-tile strong {
+    font-size: 15px;
+  }
+
+  .auth-gate-tile span {
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.76);
+  }
+
+  .auth-gate-card {
+    background: rgba(255, 255, 255, 0.96);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--text-primary);
+  }
+
+  .auth-gate-card-head {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .auth-gate-card-head span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .auth-gate-card-head strong {
+    font-size: 28px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: #12345d;
+  }
+
+  .auth-gate-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .auth-gate-tabs button {
+    min-height: 44px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .auth-gate-tabs button.active {
+    border-color: rgba(46, 117, 182, 0.3);
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary-dark);
+  }
+
+  .auth-gate-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .auth-gate-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .auth-gate-field span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .auth-gate-field input {
+    min-height: 48px;
+    border-radius: 16px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    padding: 0 14px;
+    font-size: 15px;
+  }
+
+  .auth-gate-field input:focus {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+  }
+
+  .auth-gate-alert {
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .auth-gate-alert-err {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    border: 1px solid rgba(192, 57, 43, 0.16);
+  }
+
+  .auth-gate-alert-ok {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    border: 1px solid rgba(59, 122, 30, 0.16);
+  }
+
+  .auth-gate-submit {
+    min-height: 48px;
+    border: none;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #12345d 0%, #2e75b6 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .auth-gate-submit:disabled {
+    opacity: 0.68;
+    cursor: wait;
+  }
+
+  .auth-gate-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 900px) {
+    .auth-gate {
+      padding: 14px;
+      align-items: stretch;
+    }
+
+    .auth-gate-shell {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .auth-gate-hero,
+    .auth-gate-card {
+      border-radius: 28px;
+    }
+
+    .auth-gate-hero {
+      padding: 24px 20px;
+    }
+
+    .auth-gate-card {
+      padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (max-width: 520px) {
+    .auth-gate {
+      padding: 0;
+      background: linear-gradient(180deg, #eef5fb 0%, #e6eef7 100%);
+    }
+
+    .auth-gate-shell {
+      gap: 0;
+      min-height: 100vh;
+    }
+
+    .auth-gate-hero,
+    .auth-gate-card {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      box-shadow: none;
+    }
+
+    .auth-gate-hero {
+      padding: 22px 16px 18px;
+    }
+
+    .auth-gate-card {
+      flex: 1;
+      padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
+    }
+
+    .auth-gate-tabs {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

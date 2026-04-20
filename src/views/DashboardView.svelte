@@ -195,7 +195,7 @@
       </div>
     </header>
 
-    <div class="tbl-wrap">
+    <div class="tbl-wrap desktop-only">
       <table class="rank">
         <thead>
           <tr>
@@ -257,6 +257,69 @@
           {/if}
         </tbody>
       </table>
+    </div>
+
+    <div class="task-mobile-list mobile-only">
+      {#if !filteredTasks.length}
+        <div class="mobile-empty-card">
+          {enrichedLeaves.length === 0
+            ? 'Brak zadań. Dodaj je w Edytorze WBS.'
+            : 'Brak zadań w tym statusie.'}
+        </div>
+      {:else}
+        {#each filteredTasks.slice(0, 12) as t}
+          {@const n = t.node}
+          {@const progressColor = (n.done || 0) >= 100 ? 'var(--color-success)' :
+                                  (n.done || 0) >= 50 ? 'var(--brand-primary)' :
+                                  (n.done || 0) > 0 ? 'var(--color-warning)' :
+                                  'var(--color-neutral)'}
+          {@const overdueTask = !!(n.dateEnd && n.dateEnd < today && (n.done || 0) < 100)}
+          <article class="task-mobile-card">
+            <div class="task-mobile-top">
+              <div class="task-mobile-heading">
+                <div class="task-mobile-code">{n._code ?? '—'}</div>
+                <h3 class="task-mobile-name">{n.name || '—'}</h3>
+                <p class="task-mobile-section">{t.section}</p>
+              </div>
+              <span class="status-badge status-{t.status}">{TASK_STATUS_LABEL[t.status]}</span>
+            </div>
+
+            <div class="task-mobile-progress">
+              <div class="task-mobile-progress-top">
+                <span>Postęp</span>
+                <strong>{n.done || 0}%</strong>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:{Math.min(n.done || 0, 100)}%;background:{progressColor}"></div>
+              </div>
+            </div>
+
+            <div class="task-mobile-rail">
+              <div class="task-mobile-tile">
+                <span>Odpowiedzialny</span>
+                <strong>{n.resp || '—'}</strong>
+              </div>
+              <div class="task-mobile-tile">
+                <span>Termin</span>
+                <strong class:task-mobile-danger={overdueTask}>{fmtDate(n.dateEnd)}</strong>
+                {#if n.dateEnd}
+                  <small>{daysLeftText(n.dateEnd)}</small>
+                {/if}
+              </div>
+              <div class="task-mobile-tile">
+                <span>Szacunek</span>
+                <strong>{n.md ? `${n.md} MD` : '—'}</strong>
+              </div>
+            </div>
+          </article>
+        {/each}
+      {/if}
+
+      {#if filteredTasks.length > 12}
+        <button class="mobile-more-btn" on:click={() => jumpTo('rank')}>
+          Zobacz wszystkie zadania
+        </button>
+      {/if}
     </div>
   </section>
 
@@ -556,6 +619,124 @@
   }
   .link-btn:hover { text-decoration: underline; }
 
+  .task-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  .task-mobile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 26px;
+    border: 1px solid rgba(20, 53, 95, 0.08);
+    background:
+      radial-gradient(circle at top right, rgba(46, 117, 182, 0.12), transparent 36%),
+      linear-gradient(180deg, rgba(244, 248, 252, 0.92), #ffffff);
+    box-shadow: 0 16px 28px rgba(31, 56, 100, 0.08);
+  }
+  .task-mobile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .task-mobile-heading {
+    min-width: 0;
+    flex: 1;
+  }
+  .task-mobile-code {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(20, 53, 95, 0.07);
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .task-mobile-name {
+    margin: 10px 0 4px;
+    font-size: 18px;
+    line-height: 1.15;
+    color: var(--text-primary);
+  }
+  .task-mobile-section {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .task-mobile-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .task-mobile-progress-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .task-mobile-progress-top strong {
+    color: var(--text-primary);
+    font-size: 14px;
+  }
+  .task-mobile-rail {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .task-mobile-tile {
+    flex: 0 0 150px;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(20, 53, 95, 0.08);
+  }
+  .task-mobile-tile span,
+  .task-mobile-tile small {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .task-mobile-tile strong {
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.25;
+  }
+  .task-mobile-danger {
+    color: var(--color-danger);
+  }
+  .mobile-empty-card {
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px dashed var(--border-strong);
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+  }
+  .mobile-more-btn {
+    min-height: 46px;
+    border: 1px solid var(--brand-primary);
+    border-radius: 18px;
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary-dark);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
   /* Bottom strip */
   .bottom-strip {
     display: grid;
@@ -591,7 +772,37 @@
     .bottom-strip { grid-template-columns: 1fr; }
     .strip-cell { border-right: none; border-bottom: 1px solid var(--border); }
     .strip-cell:last-child { border-bottom: none; }
-    .filters { gap: 3px; }
-    .filter-btn { padding: 6px 10px; font-size: 12px; }
+    .panel-hdr {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filters {
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-btn {
+      flex-shrink: 0;
+      padding: 8px 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--bg-surface);
+    }
+    .filter-btn.active {
+      background: var(--brand-primary-bg);
+    }
+  }
+
+  @media (max-width: 520px) {
+    .task-mobile-top {
+      flex-direction: column;
+    }
+    .task-mobile-card {
+      padding: 14px;
+      border-radius: 24px;
+    }
   }
 </style>

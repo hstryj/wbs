@@ -66,6 +66,17 @@
     mode = 'browse';
   }
 
+  function onWindowKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') close();
+  }
+
+  function onOverlayKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
+  }
+
   function onSaveTemplate() {
     if (fromNodeId === null) return;
     const src = findInTree($tree, fromNodeId);
@@ -120,17 +131,18 @@
 
 </script>
 
+<svelte:window on:keydown={onWindowKeydown} />
+
 {#if open}
   <div
     class="modal-bg"
     on:click|self={close}
-    on:keydown={(e) => e.key === 'Escape' && close()}
-    role="dialog"
-    aria-modal="true"
-    aria-label="Biblioteka szablonów"
-    tabindex="-1"
+    on:keydown|self={onOverlayKeydown}
+    role="button"
+    tabindex="0"
+    aria-label="Zamknij bibliotekę szablonów"
   >
-    <div class="tpl-modal">
+    <div class="tpl-modal" role="dialog" aria-modal="true" aria-label="Biblioteka szablonów">
       <header class="tpl-hdr">
         <h3>Biblioteka szablonów sekcji</h3>
         <div class="tpl-tabs">

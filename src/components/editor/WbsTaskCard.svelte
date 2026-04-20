@@ -1,13 +1,16 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { WbsNode, Priority, RAG } from '../../lib/types';
   import { addChild, delNode, setField, setWeight, toggleCollapse } from '../../lib/state/tree';
-  import { colVis } from '../../lib/state/ui';
+  import { colVis, pendingFocusNodeId } from '../../lib/state/ui';
   import { people, pName, pRole } from '../../lib/state/people';
   import { PRIORITIES } from '../../lib/utils/priority';
   import { isLeaf, childWeightSum, nodeDonePct, nodeWtd, barColor, depthCfg, depthOf } from '../../lib/utils/wbs';
   import { todayISO } from '../../lib/utils/dates';
 
   export let node: WbsNode;
+
+  let titleInput: HTMLInputElement;
 
   $: depth = depthOf(node._code);
   $: cfg = depthCfg(depth);
@@ -30,6 +33,18 @@
   function onRagChange(e: Event) { setField(node.id, 'rag', (e.target as HTMLSelectElement).value as RAG); }
   function onStartChange(e: Event) { setField(node.id, 'dateStart', (e.target as HTMLInputElement).value); }
   function onEndChange(e: Event) { setField(node.id, 'dateEnd', (e.target as HTMLInputElement).value); }
+  function addAndFocus() {
+    const createdId = addChild(node.id);
+    if (createdId !== null) pendingFocusNodeId.set(createdId);
+  }
+
+  $: if ($pendingFocusNodeId === node.id && titleInput) {
+    tick().then(() => {
+      titleInput?.focus();
+      titleInput?.select();
+      pendingFocusNodeId.set(null);
+    });
+  }
 </script>
 
 <article class="task-card" style="background:{cfg.bg};color:{cfg.fc}">
@@ -56,6 +71,7 @@
       </button>
     {/if}
     <input
+      bind:this={titleInput}
       class="task-title"
       style="font-size:{cfg.fs};font-weight:{cfg.fw};color:{cfg.fc}"
       value={node.name}
@@ -172,7 +188,7 @@
   </div>
 
   <div class="task-actions">
-    <button type="button" class="task-action ghost" on:click={() => addChild(node.id)}>+ Dodaj podpunkt</button>
+    <button type="button" class="task-action ghost" on:click={addAndFocus}>+ Dodaj podpunkt</button>
     <button type="button" class="task-action danger" on:click={() => delNode(node.id)}>Usuń</button>
   </div>
 </article>

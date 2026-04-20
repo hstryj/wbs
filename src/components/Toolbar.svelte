@@ -1,15 +1,13 @@
 <script lang="ts">
-  import { tree, addRoot } from '../lib/state/tree';
-  import { activeTab } from '../lib/state/ui';
+  import { quickAddTask } from '../lib/state/tree';
+  import { activeTab, pendingFocusNodeId } from '../lib/state/ui';
   import TemplatesModal from './TemplatesModal.svelte';
 
   let templatesOpen = false;
 
   function addTask() {
-    if (!$tree.length) {
-      addRoot();
-      return;
-    }
+    const createdId = quickAddTask();
+    if (createdId !== null) pendingFocusNodeId.set(createdId);
     activeTab.set('table');
   }
 

@@ -22,6 +22,9 @@ persistStore(colVis, 'wbs_col_vis');
 
 export const colPanelOpen = writable<boolean>(false);
 
+/** transient focus target for newly created WBS nodes */
+export const pendingFocusNodeId = writable<number | null>(null);
+
 /** transient warning (e.g. weight cap) */
 export const warnMsg = writable<{ text: string; kind: 'bad' | 'ok' | 'info' } | null>(null);
 let _warnTimer: ReturnType<typeof setTimeout> | null = null;

@@ -1,9 +1,13 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { WbsNode } from '../../lib/types';
   import { addChild, delNode, setField, toggleCollapse } from '../../lib/state/tree';
+  import { pendingFocusNodeId } from '../../lib/state/ui';
   import { childWeightSum, childWeightedSum } from '../../lib/utils/wbs';
 
   export let node: WbsNode;
+
+  let titleInput: HTMLInputElement;
 
   $: canToggle = node.children.length > 0;
   $: progress = (() => {
@@ -15,6 +19,19 @@
 
   function onTitleInput(e: Event) {
     setField(node.id, 'name', (e.target as HTMLInputElement).value);
+  }
+
+  function addAndFocus() {
+    const createdId = addChild(node.id);
+    if (createdId !== null) pendingFocusNodeId.set(createdId);
+  }
+
+  $: if ($pendingFocusNodeId === node.id && titleInput) {
+    tick().then(() => {
+      titleInput?.focus();
+      titleInput?.select();
+      pendingFocusNodeId.set(null);
+    });
   }
 </script>
 
@@ -29,6 +46,7 @@
   </div>
 
   <input
+    bind:this={titleInput}
     class="project-title"
     value={node.name}
     placeholder="Tytuł punktu głównego..."
@@ -55,7 +73,7 @@
   </div>
 
   <div class="project-actions">
-    <button type="button" class="project-action ghost" on:click={() => addChild(node.id)}>+ Dodaj podpunkt</button>
+    <button type="button" class="project-action ghost" on:click={addAndFocus}>+ Dodaj podpunkt</button>
     <button type="button" class="project-action danger" on:click={() => delNode(node.id)}>Usuń</button>
   </div>
 </section>

@@ -7,7 +7,7 @@
    *  3) wpinania komponentów WbsProjectRow / WbsTaskRow / WbsAddRow.
    */
   import { tree, addRoot, addSibling } from '../lib/state/tree';
-  import { colVis } from '../lib/state/ui';
+  import { colVis, pendingFocusNodeId } from '../lib/state/ui';
   import { projectSettings } from '../lib/state/worklog';
   import { assignCodes, collectLeaves, depthCfg, depthOf, rootWeightSum, rootWeightedSum } from '../lib/utils/wbs';
   import {
@@ -30,6 +30,16 @@
     | { kind: 'add';     onClick: () => void; label: string; bg: string }
     | { kind: 'addRoot'; onClick: () => void; label: string };
 
+  function addRootAndFocus() {
+    const createdId = addRoot();
+    pendingFocusNodeId.set(createdId);
+  }
+
+  function addSiblingAndFocus(nodeId: number) {
+    const createdId = addSibling(nodeId);
+    if (createdId !== null) pendingFocusNodeId.set(createdId);
+  }
+
   function buildRows(list: WbsNode[]): Row[] {
     const rows: Row[] = [];
     for (let i = 0; i < list.length; i++) {
@@ -38,13 +48,13 @@
         rows.push({ kind: 'proj', node: n });
         if (!n.collapsed) pushChildren(n.children, rows);
         if (i === list.length - 1) {
-          rows.push({ kind: 'addRoot', onClick: addRoot, label: '+ Dodaj kolejny punkt główny' });
+          rows.push({ kind: 'addRoot', onClick: addRootAndFocus, label: '+ Dodaj kolejny punkt główny' });
         }
         continue;
       }
       rows.push({ kind: 'task', node: n });
       if (i === list.length - 1) {
-        rows.push({ kind: 'addRoot', onClick: addRoot, label: '+ Dodaj kolejny punkt główny' });
+        rows.push({ kind: 'addRoot', onClick: addRootAndFocus, label: '+ Dodaj kolejny punkt główny' });
       }
     }
     return rows;
@@ -63,7 +73,7 @@
           : 'Dodaj kolejny element na tym poziomie';
         rows.push({
           kind: 'add',
-          onClick: () => addSibling(parentId),
+          onClick: () => addSiblingAndFocus(parentId),
           label: '+ ' + labelBase,
           bg: depthCfg(depthOf(list[i]._code)).bg
         });
@@ -146,7 +156,7 @@
       <span class="mobile-empty-kicker">Mobilny edytor</span>
       <strong>Nie ma jeszcze struktury WBS</strong>
       <p>Zaczynamy od pierwszego punktu głównego, a kolejne sekcje i zadania dołożysz już z poziomu kafelków.</p>
-      <button type="button" class="btn btn-blue" on:click={addRoot}>Dodaj punkt główny</button>
+      <button type="button" class="btn btn-blue" on:click={addRootAndFocus}>Dodaj punkt główny</button>
     </div>
   {:else}
     {#each rows as row}
