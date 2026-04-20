@@ -31,17 +31,19 @@ export interface ProjectSettings {
   hrsPerWeek: number;
 }
 
-export const projectSettings = writable<ProjectSettings>({
+export const DEFAULT_PROJECT_SETTINGS: ProjectSettings = {
   start: '07:00',
   end: '15:30',
   brk: 30,
   hrsPerWeek: 40
-});
+};
+
+export const projectSettings = writable<ProjectSettings>({ ...DEFAULT_PROJECT_SETTINGS });
 persistStore(projectSettings, 'wbs_project_settings');
 
 /** Patch legacy stored settings — fill missing hrsPerWeek if reading
  * older localStorage data that doesn't have it yet. */
-projectSettings.update((s) => ({ hrsPerWeek: 40, ...s }));
+projectSettings.update((s) => ({ ...DEFAULT_PROJECT_SETTINGS, ...s, hrsPerWeek: s?.hrsPerWeek || DEFAULT_PROJECT_SETTINGS.hrsPerWeek }));
 
 // ── Read helpers (pure) ─────────────────────────────────────────────
 export function wlGetHours(wl: Worklog, person: string, y: number, w: number, dow: number): number {

@@ -9,7 +9,6 @@
 
   $: leavesCount = collectLeaves($tree).length;
   $: lastChange = $changelog[0]?.ts || null;
-
   $: syncLabel = (() => {
     if (!$currentProject.id) return null;
     switch ($currentProject.status) {
@@ -54,6 +53,10 @@
   <div class="sb-cell">
     <span class="sb-dot" class:sb-dot-online={online} class:sb-dot-offline={!online}></span>
     {online ? 'Online' : 'Offline'}
+  </div>
+  <div class="sb-sep"></div>
+  <div class="sb-cell">
+    {$currentProject.id ? 'Cloud' : 'Tryb lokalny'}
   </div>
   <div class="sb-sep"></div>
   <div class="sb-cell">Zadania: <strong>{leavesCount}</strong></div>

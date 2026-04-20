@@ -11,6 +11,10 @@ persistStore(snapshots, 'wbs_snapshots');
 
 let _uid = 1;
 
+snapshots.subscribe((list) => {
+  _uid = list.reduce((max, snap) => Math.max(max, Number.isFinite(snap.id) ? snap.id : 0), 0) + 1;
+});
+
 export function takeSnapshot(name: string): void {
   const trimmed = name.trim();
   if (!trimmed) return;

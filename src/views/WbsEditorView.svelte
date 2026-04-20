@@ -10,7 +10,16 @@
   import { colVis } from '../lib/state/ui';
   import { projectSettings } from '../lib/state/worklog';
   import { assignCodes, collectLeaves, depthCfg, depthOf, rootWeightSum, rootWeightedSum } from '../lib/utils/wbs';
-  import { WbsWarnBar, WbsColumnPanel, WbsProjectRow, WbsTaskRow, WbsAddRow } from '../components/editor';
+  import {
+    WbsWarnBar,
+    WbsColumnPanel,
+    WbsProjectRow,
+    WbsTaskRow,
+    WbsAddRow,
+    WbsProjectCard,
+    WbsTaskCard,
+    WbsAddCard
+  } from '../components/editor';
   import type { WbsNode } from '../lib/types';
 
   $: ($tree, assignCodes($tree));
@@ -76,7 +85,7 @@
 <WbsWarnBar />
 <WbsColumnPanel />
 
-<div class="tbl-wrap">
+<div class="tbl-wrap desktop-only">
   <table class="main">
     <thead>
       <tr>
@@ -131,6 +140,29 @@
   </table>
 </div>
 
+<section class="mobile-wbs-board mobile-only">
+  {#if $tree.length === 0}
+    <div class="mobile-empty">
+      <span class="mobile-empty-kicker">Mobilny edytor</span>
+      <strong>Nie ma jeszcze struktury WBS</strong>
+      <p>Zaczynamy od pierwszego punktu głównego, a kolejne sekcje i zadania dołożysz już z poziomu kafelków.</p>
+      <button type="button" class="btn btn-blue" on:click={addRoot}>Dodaj punkt główny</button>
+    </div>
+  {:else}
+    {#each rows as row}
+      {#if row.kind === 'proj'}
+        <WbsProjectCard node={row.node} />
+      {:else if row.kind === 'task'}
+        <WbsTaskCard node={row.node} />
+      {:else if row.kind === 'add'}
+        <WbsAddCard onClick={row.onClick} label={row.label} bg={row.bg} />
+      {:else if row.kind === 'addRoot'}
+        <WbsAddCard onClick={row.onClick} label={row.label} variant="root" />
+      {/if}
+    {/each}
+  {/if}
+</section>
+
 {#if $tree.length > 0 && totalMD > 0}
   <div class="md-summary">
     <span class="md-val"><strong>{totalMD.toFixed(0)}</strong> osobodni</span>
@@ -161,4 +193,71 @@
   .md-sep { color: var(--text-muted); }
   .md-estimate { color: var(--brand-primary-dark); }
   .md-estimate strong { color: var(--brand-primary-dark); }
+
+  .mobile-only {
+    display: none;
+  }
+
+  @media (max-width: 820px) {
+    .desktop-only {
+      display: none;
+    }
+
+    .mobile-only {
+      display: block;
+    }
+
+    .mobile-wbs-board {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px;
+      background:
+        radial-gradient(circle at top right, rgba(46, 117, 182, 0.12), transparent 38%),
+        linear-gradient(180deg, #f4f8fc 0%, #edf4fa 100%);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mobile-empty {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 22px 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(37, 84, 136, 0.12);
+      box-shadow: 0 18px 30px rgba(31, 56, 100, 0.08);
+      color: var(--text-primary);
+    }
+
+    .mobile-empty-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .mobile-empty strong {
+      font-size: 22px;
+      line-height: 1.1;
+      color: #12345d;
+      letter-spacing: -0.03em;
+    }
+
+    .mobile-empty p {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+    }
+
+    .md-summary {
+      border-top: none;
+      border-radius: 0 0 20px 20px;
+      padding: 12px 14px 16px;
+      background: linear-gradient(180deg, rgba(238, 245, 251, 0.94), rgba(247, 250, 253, 0.94));
+    }
+  }
 </style>

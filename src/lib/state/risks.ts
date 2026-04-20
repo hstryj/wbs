@@ -7,6 +7,10 @@ persistStore(risks, 'wbs_risks');
 
 let _riskUid = 1;
 
+risks.subscribe((list) => {
+  _riskUid = list.reduce((max, risk) => Math.max(max, Number.isFinite(risk.id) ? risk.id : 0), 0) + 1;
+});
+
 export function computeLevel(prob: RiskLevel, impact: RiskLevel): RiskLevel {
   if (prob === 'H' || impact === 'H') return 'H';
   if (prob === 'L' && impact === 'L') return 'L';

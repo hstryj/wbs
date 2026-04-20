@@ -19,7 +19,9 @@ export interface WbsTemplate {
 export const templates = writable<WbsTemplate[]>([]);
 persistStore(templates, 'wbs_templates');
 
-export const templateCategories = writable<string[]>(['Ogólne', 'Elektryka', 'Automatyka', 'Mechaniczne']);
+export const DEFAULT_TEMPLATE_CATEGORIES = ['Ogólne', 'Elektryka', 'Automatyka', 'Mechaniczne'];
+
+export const templateCategories = writable<string[]>([...DEFAULT_TEMPLATE_CATEGORIES]);
 persistStore(templateCategories, 'wbs_template_categories');
 
 function genId(): string {

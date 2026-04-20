@@ -38,6 +38,7 @@
   $: budgetState = budgetPct > 100 ? 'over' : budgetPct >= 80 ? 'warn' : 'ok';
 
   $: leavesCount = collectLeaves($tree).length;
+
 </script>
 
 <div class="proj-ribbon">

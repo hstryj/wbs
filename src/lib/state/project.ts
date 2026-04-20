@@ -16,7 +16,7 @@ export interface ProjectMeta {
   manager: string;
 }
 
-export const projectMeta = writable<ProjectMeta>({
+export const DEFAULT_PROJECT_META: ProjectMeta = {
   name: '',
   code: '',
   client: '',
@@ -27,7 +27,9 @@ export const projectMeta = writable<ProjectMeta>({
   actualBudget: 0,
   currency: 'PLN',
   manager: ''
-});
+};
+
+export const projectMeta = writable<ProjectMeta>({ ...DEFAULT_PROJECT_META });
 persistStore(projectMeta, 'wbs_project_meta');
 
 export const STATUS_LABEL: Record<ProjectStatus, string> = {
