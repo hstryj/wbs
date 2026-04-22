@@ -32,6 +32,13 @@
   import { updateProjectMeta, updateProjectPayload, type CloudProject } from '../lib/cloud/projects';
 
   type AdminSection = 'context' | 'projects' | 'employees' | 'access';
+  type AdminSectionTone = {
+    from: string;
+    to: string;
+    glow: string;
+    edge: string;
+    accent: string;
+  };
 
   let organizations: CloudOrganization[] = [];
   let orgProjects: CloudProject[] = [];
@@ -102,6 +109,36 @@
     { id: 'employees', label: 'Pracownicy', meta: 'katalog i edycja' },
     { id: 'access', label: 'Dostęp', meta: 'zaproszenia i role' }
   ];
+  const ADMIN_SECTION_TONES: Record<AdminSection, AdminSectionTone> = {
+    context: {
+      from: 'rgba(74, 222, 128, 0.14)',
+      to: 'rgba(34, 211, 238, 0.12)',
+      glow: 'rgba(45, 212, 191, 0.28)',
+      edge: 'rgba(45, 212, 191, 0.34)',
+      accent: '#0f766e'
+    },
+    projects: {
+      from: 'rgba(45, 212, 191, 0.12)',
+      to: 'rgba(59, 130, 246, 0.14)',
+      glow: 'rgba(56, 189, 248, 0.28)',
+      edge: 'rgba(56, 189, 248, 0.34)',
+      accent: '#1d4ed8'
+    },
+    employees: {
+      from: 'rgba(244, 114, 182, 0.12)',
+      to: 'rgba(168, 85, 247, 0.14)',
+      glow: 'rgba(217, 70, 239, 0.28)',
+      edge: 'rgba(217, 70, 239, 0.34)',
+      accent: '#a21caf'
+    },
+    access: {
+      from: 'rgba(251, 191, 36, 0.12)',
+      to: 'rgba(249, 115, 22, 0.14)',
+      glow: 'rgba(251, 146, 60, 0.28)',
+      edge: 'rgba(251, 146, 60, 0.34)',
+      accent: '#c2410c'
+    }
+  };
 
   const SUPER_ADMIN_FALLBACK_EMAILS = new Set(['starghz@icloud.com']);
 
@@ -848,6 +885,17 @@
     adminSection = sectionId;
     clearFeedback();
   }
+
+  function sectionToneStyle(sectionId: AdminSection): string {
+    const tone = ADMIN_SECTION_TONES[sectionId];
+    return [
+      `--section-from: ${tone.from}`,
+      `--section-to: ${tone.to}`,
+      `--section-glow: ${tone.glow}`,
+      `--section-edge: ${tone.edge}`,
+      `--section-accent: ${tone.accent}`
+    ].join('; ');
+  }
 </script>
 
 <div class="admin-pane">
@@ -958,6 +1006,7 @@
             type="button"
             class="admin-section-btn"
             class:active={adminSection === section.id}
+            style={sectionToneStyle(section.id)}
             on:click={() => goToSection(section.id)}
           >
             <span>{section.label}</span>
@@ -1042,37 +1091,95 @@
             </div>
 
             {#if activeOrganization}
-              <div class="admin-list">
-                <article class="admin-list-card">
-                  <div>
-                    <strong>Slug organizacji</strong>
-                    <span>{activeOrganization.slug || 'Brak zdefiniowanego slugu'}</span>
+              <div class="admin-detail-list">
+                <details class="admin-detail-card" open>
+                  <summary>
+                    <div>
+                      <strong>Slug organizacji</strong>
+                      <span>{activeOrganization.slug || 'Brak zdefiniowanego slugu'}</span>
+                    </div>
+                    <div class="admin-chip-stack">
+                      <span class="admin-chip admin-chip-muted">{new Date(activeOrganization.updated_at).toLocaleDateString('pl-PL')}</span>
+                      <span class="admin-detail-toggle">Szczegóły</span>
+                    </div>
+                  </summary>
+                  <div class="admin-detail-body">
+                    <div class="admin-detail-grid">
+                      <article>
+                        <span>Rola w firmie</span>
+                        <strong>{activeRoleLabel || 'Brak przypisanej roli'}</strong>
+                      </article>
+                      <article>
+                        <span>Dostęp platformy</span>
+                        <strong>{isPlatformAdmin ? 'Super admin aktywny' : 'Tryb firmowy'}</strong>
+                      </article>
+                      <article>
+                        <span>Aktualizacja</span>
+                        <strong>{new Date(activeOrganization.updated_at).toLocaleString('pl-PL', { dateStyle: 'medium', timeStyle: 'short' })}</strong>
+                      </article>
+                    </div>
                   </div>
-                  <div class="admin-chip-stack">
-                    <span class="admin-chip admin-chip-muted">{new Date(activeOrganization.updated_at).toLocaleDateString('pl-PL')}</span>
+                </details>
+
+                <details class="admin-detail-card" open>
+                  <summary>
+                    <div>
+                      <strong>Aktywny projekt w workspace</strong>
+                      <span>{activeProjectName}</span>
+                    </div>
+                    <div class="admin-chip-stack">
+                      {#if activeProjectCode}
+                        <span class="admin-chip">Kod: {activeProjectCode}</span>
+                      {/if}
+                      <span class="admin-chip">{currentProjectAttached ? 'Podpięty do firmy' : 'Projekt osobisty'}</span>
+                    </div>
+                  </summary>
+                  <div class="admin-detail-body">
+                    <div class="admin-detail-grid">
+                      <article>
+                        <span>Klient</span>
+                        <strong>{$projectMeta.client.trim() || 'Brak klienta'}</strong>
+                      </article>
+                      <article>
+                        <span>Kierownik</span>
+                        <strong>{$projectMeta.manager.trim() || 'Brak kierownika'}</strong>
+                      </article>
+                      <article>
+                        <span>Zakres czasu</span>
+                        <strong>{$projectMeta.dateStart || '—'} → {$projectMeta.dateEnd || '—'}</strong>
+                      </article>
+                    </div>
                   </div>
-                </article>
-                <article class="admin-list-card">
-                  <div>
-                    <strong>Aktywny projekt w workspace</strong>
-                    <span>{activeProjectName}</span>
+                </details>
+
+                <details class="admin-detail-card">
+                  <summary>
+                    <div>
+                      <strong>Zespół i dostęp</strong>
+                      <span>{employees.filter((employee) => employee.active).length} aktywnych pracowników • {orgMembers.length} członków organizacji</span>
+                    </div>
+                    <div class="admin-chip-stack">
+                      <span class="admin-chip admin-chip-muted">{allProjectStaffing.length} przypisań w całej organizacji</span>
+                      <span class="admin-detail-toggle">Wgląd</span>
+                    </div>
+                  </summary>
+                  <div class="admin-detail-body">
+                    <div class="admin-detail-grid">
+                      <article>
+                        <span>Zaproszenia oczekujące</span>
+                        <strong>{orgInvitations.filter((invitation) => !invitation.accepted_at).length}</strong>
+                      </article>
+                      <article>
+                        <span>Możesz zapraszać</span>
+                        <strong>{canInviteMembers ? 'Tak' : 'Nie'}</strong>
+                      </article>
+                      <article>
+                        <span>Możesz zmieniać role</span>
+                        <strong>{canManageMembers ? 'Tak' : 'Tylko owner'}</strong>
+                      </article>
+                    </div>
                   </div>
-                  <div class="admin-chip-stack">
-                    {#if activeProjectCode}
-                      <span class="admin-chip">Kod: {activeProjectCode}</span>
-                    {/if}
-                    <span class="admin-chip">{currentProjectAttached ? 'Podpięty do firmy' : 'Projekt osobisty'}</span>
-                  </div>
-                </article>
-                <article class="admin-list-card">
-                  <div>
-                    <strong>Zespół i dostęp</strong>
-                    <span>{employees.filter((employee) => employee.active).length} aktywnych pracowników • {orgMembers.length} członków organizacji</span>
-                  </div>
-                  <div class="admin-chip-stack">
-                    <span class="admin-chip admin-chip-muted">{allProjectStaffing.length} przypisań w całej organizacji</span>
-                  </div>
-                </article>
+                </details>
               </div>
             {:else}
               <div class="admin-empty-inline">
@@ -1190,7 +1297,7 @@
               <div class="admin-list">
                 {#each orgProjects as project}
                   {@const assignments = projectAssignments(project.id)}
-                  <article class:admin-list-card-stack={editingProjectId === project.id} class="admin-list-card" data-active={project.id === selectedManagedProjectId ? '1' : '0'}>
+                  <article class="admin-list-card admin-list-card-stack admin-project-card" data-active={project.id === selectedManagedProjectId ? '1' : '0'}>
                     <div class="admin-project-card-head">
                       <div>
                         <strong>{project.name}</strong>
@@ -1233,12 +1340,12 @@
                         </div>
                       </div>
                     {:else}
-                      <div class="admin-inline-actions">
-                        <button class="admin-ghost-btn" type="button" on:click={() => selectManagedProject(project.id)}>Zarządzaj</button>
-                        <button class="admin-ghost-btn" type="button" on:click={() => openProjectInWorkspace(project.id)} disabled={saving || switchingWorkspace}>
+                      <div class="admin-project-actions">
+                        <button class="admin-action-btn admin-action-manage" type="button" on:click={() => selectManagedProject(project.id)}>Zarządzaj</button>
+                        <button class="admin-action-btn admin-action-open" type="button" on:click={() => openProjectInWorkspace(project.id)} disabled={saving || switchingWorkspace}>
                           {project.id === activeProjectId ? 'Otwarty w workspace' : 'Otwórz w workspace'}
                         </button>
-                        <button class="admin-ghost-btn" type="button" on:click={() => startProjectEdit(project)} disabled={saving}>Edytuj</button>
+                        <button class="admin-action-btn admin-action-edit" type="button" on:click={() => startProjectEdit(project)} disabled={saving}>Edytuj</button>
                       </div>
                     {/if}
                   </article>
@@ -1826,6 +1933,7 @@
   }
 
   .admin-section-btn {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -1834,37 +1942,79 @@
     padding: 14px 16px;
     border-radius: 22px;
     border: 1px solid var(--admin-card-border);
-    background: var(--admin-card-bg);
+    background:
+      linear-gradient(145deg, var(--section-from, rgba(255, 255, 255, 0.94)) 0%, var(--section-to, rgba(255, 255, 255, 0.98)) 100%);
     box-shadow: var(--admin-card-shadow);
     color: var(--admin-body-text);
     text-align: left;
     cursor: pointer;
+    overflow: hidden;
+    isolation: isolate;
     transition: transform .08s ease, border-color .14s ease, box-shadow .14s ease, background .14s ease;
   }
 
+  .admin-section-btn::before,
+  .admin-section-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .admin-section-btn::before {
+    background:
+      repeating-linear-gradient(
+        125deg,
+        rgba(255, 255, 255, 0.2) 0 12px,
+        rgba(255, 255, 255, 0.06) 12px 24px
+      );
+    opacity: 0.55;
+    mix-blend-mode: screen;
+  }
+
+  .admin-section-btn::after {
+    inset: auto -10% -42% auto;
+    width: 56%;
+    height: 72%;
+    border-radius: 999px;
+    background: radial-gradient(circle, var(--section-glow, rgba(46, 117, 182, 0.18)) 0%, transparent 72%);
+    opacity: 0.85;
+    filter: blur(12px);
+  }
+
   .admin-section-btn:hover {
-    border-color: rgba(46, 117, 182, 0.26);
-    box-shadow: 0 14px 28px rgba(31, 56, 100, 0.12);
+    border-color: var(--section-edge, rgba(46, 117, 182, 0.26));
+    box-shadow:
+      0 14px 28px rgba(31, 56, 100, 0.12),
+      0 0 0 1px color-mix(in srgb, var(--section-edge, rgba(46, 117, 182, 0.26)) 60%, transparent);
   }
 
   .admin-section-btn.active {
-    border-color: rgba(46, 117, 182, 0.32);
-    background: linear-gradient(135deg, rgba(46, 117, 182, 0.14) 0%, rgba(255, 255, 255, 0.98) 100%);
+    border-color: var(--section-edge, rgba(46, 117, 182, 0.32));
+    background:
+      linear-gradient(145deg, var(--section-from, rgba(46, 117, 182, 0.14)) 0%, rgba(255, 255, 255, 0.98) 100%);
+    box-shadow:
+      0 16px 32px rgba(31, 56, 100, 0.12),
+      0 0 28px var(--section-glow, rgba(46, 117, 182, 0.18));
   }
 
   :global([data-theme='dark']) .admin-section-btn.active {
-    background: linear-gradient(135deg, rgba(46, 117, 182, 0.2) 0%, rgba(16, 29, 48, 0.98) 100%);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--section-from, rgba(46, 117, 182, 0.2)) 80%, rgba(16, 29, 48, 0.92)) 0%, rgba(16, 29, 48, 0.98) 100%);
   }
 
   .admin-section-btn span {
+    position: relative;
+    z-index: 1;
     font-size: 18px;
     font-weight: 800;
     line-height: 1.05;
     letter-spacing: -0.03em;
-    color: var(--admin-strong-text);
+    color: color-mix(in srgb, var(--admin-strong-text) 82%, var(--section-accent, #12345d) 18%);
   }
 
   .admin-section-btn small {
+    position: relative;
+    z-index: 1;
     font-size: 12px;
     line-height: 1.4;
     color: var(--admin-muted-strong);
@@ -2252,6 +2402,96 @@
     gap: 10px;
   }
 
+  .admin-detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-detail-card {
+    border-radius: 22px;
+    border: 1px solid var(--admin-card-border);
+    background: var(--admin-soft-bg);
+    overflow: hidden;
+  }
+
+  .admin-detail-card summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+  }
+
+  .admin-detail-card summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .admin-detail-card summary strong {
+    display: block;
+    font-size: 16px;
+    color: var(--admin-strong-text);
+  }
+
+  .admin-detail-card summary span {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--admin-body-text);
+  }
+
+  .admin-detail-toggle {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(46, 117, 182, 0.12);
+    color: #1d4d8c !important;
+    font-size: 11px !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .admin-detail-body {
+    padding: 0 18px 18px;
+  }
+
+  .admin-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .admin-detail-grid article {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.52);
+    border: 1px solid rgba(46, 117, 182, 0.12);
+  }
+
+  .admin-detail-grid article span {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--admin-muted-text);
+  }
+
+  .admin-detail-grid article strong {
+    font-size: 15px;
+    line-height: 1.35;
+    color: var(--admin-strong-text);
+  }
+
   .admin-list-card {
     display: flex;
     align-items: center;
@@ -2285,6 +2525,79 @@
     font-size: 13px;
     line-height: 1.45;
     color: var(--admin-body-text);
+  }
+
+  .admin-project-card {
+    gap: 14px;
+  }
+
+  .admin-project-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .admin-action-btn {
+    min-height: 48px;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform .08s ease, box-shadow .12s ease, filter .12s ease;
+  }
+
+  .admin-action-btn:hover {
+    box-shadow: 0 14px 24px rgba(31, 56, 100, 0.16);
+  }
+
+  .admin-action-btn:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .admin-action-manage {
+    background: linear-gradient(135deg, rgba(227, 242, 253, 0.98) 0%, rgba(189, 224, 254, 0.96) 100%);
+    border-color: rgba(56, 189, 248, 0.28);
+    color: #0f4c81;
+  }
+
+  .admin-action-open {
+    background: linear-gradient(135deg, rgba(232, 245, 233, 0.98) 0%, rgba(187, 247, 208, 0.96) 100%);
+    border-color: rgba(74, 222, 128, 0.28);
+    color: #166534;
+  }
+
+  .admin-action-edit {
+    background: linear-gradient(135deg, rgba(243, 232, 255, 0.98) 0%, rgba(233, 213, 255, 0.96) 100%);
+    border-color: rgba(168, 85, 247, 0.28);
+    color: #7c2d92;
+  }
+
+  :global([data-theme='dark']) .admin-detail-grid article {
+    background: rgba(8, 19, 34, 0.42);
+    border-color: rgba(126, 203, 255, 0.12);
+  }
+
+  :global([data-theme='dark']) .admin-action-manage {
+    background: linear-gradient(135deg, rgba(12, 47, 83, 0.94) 0%, rgba(22, 78, 139, 0.92) 100%);
+    color: #d8efff;
+    border-color: rgba(56, 189, 248, 0.24);
+  }
+
+  :global([data-theme='dark']) .admin-action-open {
+    background: linear-gradient(135deg, rgba(12, 61, 38, 0.94) 0%, rgba(22, 101, 52, 0.9) 100%);
+    color: #dfffe8;
+    border-color: rgba(74, 222, 128, 0.24);
+  }
+
+  :global([data-theme='dark']) .admin-action-edit {
+    background: linear-gradient(135deg, rgba(66, 25, 90, 0.94) 0%, rgba(126, 34, 206, 0.88) 100%);
+    color: #f7ddff;
+    border-color: rgba(216, 70, 239, 0.22);
   }
 
   .admin-empty-inline {
@@ -2385,7 +2698,9 @@
 
     .admin-form-grid,
     .admin-form-grid-3,
-    .admin-summary-grid {
+    .admin-summary-grid,
+    .admin-detail-grid,
+    .admin-project-actions {
       grid-template-columns: 1fr;
     }
 

@@ -220,23 +220,25 @@
               <strong>Przełącz projekt bez ręcznego przepisywania danych</strong>
               <small>Najpierw wybierz istniejący projekt z bazy, a dopiero potem ewentualnie popraw metadane.</small>
             </div>
-            <label class="form-full">Istniejący projekt z bazy
-              <select bind:value={projectPickerId} disabled={projectPickerBusy || cloudProjects.length === 0}>
-                {#if cloudProjects.length === 0}
-                  <option value="">Brak innych projektów w chmurze</option>
-                {:else}
-                  {#each cloudProjects as project}
-                    <option value={project.id}>
-                      {project.name || 'Bez nazwy'}{project.client ? ` — ${project.client}` : ''}
-                    </option>
-                  {/each}
-                {/if}
-              </select>
-            </label>
-            <div class="project-switcher-actions">
-              <button class="btn project-switcher-btn" disabled={!projectPickerId || projectPickerBusy} on:click={openSelectedProject}>
-                {projectPickerBusy ? 'Ładowanie…' : projectPickerId === $currentProject.id ? 'Odśwież z bazy' : 'Otwórz wybrany projekt'}
-              </button>
+            <div class="project-switcher-grid">
+              <label class="project-span-2">Istniejący projekt z bazy
+                <select bind:value={projectPickerId} disabled={projectPickerBusy || cloudProjects.length === 0}>
+                  {#if cloudProjects.length === 0}
+                    <option value="">Brak innych projektów w chmurze</option>
+                  {:else}
+                    {#each cloudProjects as project}
+                      <option value={project.id}>
+                        {project.name || 'Bez nazwy'}{project.client ? ` — ${project.client}` : ''}
+                      </option>
+                    {/each}
+                  {/if}
+                </select>
+              </label>
+              <div class="project-switcher-actions">
+                <button class="btn project-switcher-btn" disabled={!projectPickerId || projectPickerBusy} on:click={openSelectedProject}>
+                  {projectPickerBusy ? 'Ładowanie…' : projectPickerId === $currentProject.id ? 'Odśwież z bazy' : 'Otwórz wybrany projekt'}
+                </button>
+              </div>
             </div>
             <p class="project-switcher-note">
               Tu otworzysz istniejący projekt widoczny dla Twojego konta i od razu przełączysz cały workspace na ten zapis z bazy.
@@ -250,9 +252,9 @@
 
       <section class="project-modal-section">
         <div class="project-modal-section-title">Podstawowe dane</div>
-        <div class="form-grid">
-          <label>Numer kontraktu
-            <input type="text" bind:value={draft.code} placeholder="np. 2026/ME-014" />
+        <div class="form-grid project-form-grid">
+          <label class="project-span-2">Nazwa projektu
+            <input type="text" bind:value={draft.name} placeholder="np. Moderna Elektro — rozbudowa hali" />
           </label>
           <label>Status
             <select bind:value={draft.status}>
@@ -261,13 +263,13 @@
               {/each}
             </select>
           </label>
-          <label class="form-full">Nazwa projektu
-            <input type="text" bind:value={draft.name} placeholder="np. Moderna Elektro — rozbudowa hali" />
-          </label>
-          <label class="form-full">Klient
+          <label class="project-span-2">Klient
             <input type="text" bind:value={draft.client} placeholder="np. ElektroPro Sp. z o.o." />
           </label>
-          <label class="form-full">Kierownik projektu
+          <label>Numer kontraktu
+            <input type="text" bind:value={draft.code} placeholder="np. 2026/ME-014" />
+          </label>
+          <label class="project-span-2">Kierownik projektu
             <input type="text" bind:value={draft.manager} placeholder="np. J. Kowalski" />
           </label>
           <label>Data rozpoczęcia
@@ -528,6 +530,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    width: min(1180px, 96vw);
+    max-width: min(1180px, 96vw);
   }
   .project-modal-box h3 {
     margin: 0;
@@ -594,6 +598,13 @@
     gap: 10px;
   }
 
+  .project-switcher-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 16px;
+    align-items: end;
+  }
+
   .project-switcher-head {
     display: flex;
     flex-direction: column;
@@ -614,7 +625,11 @@
 
   .project-switcher-actions {
     display: flex;
-    justify-content: flex-start;
+    justify-content: stretch;
+  }
+
+  .project-switcher-actions .btn {
+    width: 100%;
   }
 
   .project-switcher-btn {
@@ -646,7 +661,7 @@
 
   .form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px 16px;
   }
   .form-grid label {
@@ -676,6 +691,18 @@
   }
   .form-full {
     grid-column: 1 / -1;
+  }
+
+  .project-span-2 {
+    grid-column: span 2;
+  }
+
+  .project-span-3 {
+    grid-column: 1 / -1;
+  }
+
+  .project-settings-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   @media (max-width: 900px) {
@@ -772,12 +799,15 @@
       padding: 16px;
       border-radius: 24px;
     }
+    .project-switcher-grid,
     .form-grid,
     .project-settings-grid {
       grid-template-columns: 1fr;
       gap: 12px;
     }
-    .form-full {
+    .form-full,
+    .project-span-2,
+    .project-span-3 {
       grid-column: auto;
     }
     .project-modal-actions {

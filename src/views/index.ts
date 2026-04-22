@@ -1,54 +1,35 @@
-/* Barrel + mapa widoków dla dict-driven routera w App.svelte.
-   Dodanie nowego widoku: 1) zaimportuj komponent, 2) wpisz do VIEWS. */
+/* Lazy loader widoków. Dzięki temu start aplikacji nie ładuje wszystkich zakładek naraz. */
 
-import DashboardView from './DashboardView.svelte';
-import WbsEditorView from './WbsEditorView.svelte';
-import RankingView from './RankingView.svelte';
-import TeamView from './TeamView.svelte';
-import GanttView from './GanttView.svelte';
-import WorklogReportView from './WorklogReportView.svelte';
-import OrdersView from './OrdersView.svelte';
-import RisksView from './RisksView.svelte';
-import ReportView from './ReportView.svelte';
-import TreeView from './TreeView.svelte';
-import WaterfallView from './WaterfallView.svelte';
-import ChangelogView from './ChangelogView.svelte';
-import PersonalPlanView from './PersonalPlanView.svelte';
-import AdminView from './AdminView.svelte';
 import type { ComponentType } from 'svelte';
 import type { TabName } from '../lib/types';
 
-export {
-  DashboardView,
-  WbsEditorView,
-  RankingView,
-  TeamView,
-  GanttView,
-  WorklogReportView,
-  OrdersView,
-  RisksView,
-  ReportView,
-  TreeView,
-  WaterfallView,
-  ChangelogView,
-  PersonalPlanView,
-  AdminView
+type ViewModule = { default: ComponentType };
+type ViewLoader = () => Promise<ViewModule>;
+
+const VIEW_LOADERS: Record<TabName, ViewLoader> = {
+  dash: () => import('./DashboardView.svelte') as Promise<ViewModule>,
+  table: () => import('./WbsEditorView.svelte') as Promise<ViewModule>,
+  rank: () => import('./RankingView.svelte') as Promise<ViewModule>,
+  team: () => import('./TeamView.svelte') as Promise<ViewModule>,
+  gantt: () => import('./GanttView.svelte') as Promise<ViewModule>,
+  personal: () => import('./PersonalPlanView.svelte') as Promise<ViewModule>,
+  wlreport: () => import('./WorklogReportView.svelte') as Promise<ViewModule>,
+  orders: () => import('./OrdersView.svelte') as Promise<ViewModule>,
+  admin: () => import('./AdminView.svelte') as Promise<ViewModule>,
+  risk: () => import('./RisksView.svelte') as Promise<ViewModule>,
+  report: () => import('./ReportView.svelte') as Promise<ViewModule>,
+  chart: () => import('./TreeView.svelte') as Promise<ViewModule>,
+  wfall: () => import('./WaterfallView.svelte') as Promise<ViewModule>,
+  log: () => import('./ChangelogView.svelte') as Promise<ViewModule>
 };
 
-/** Mapa zakładka → komponent widoku. Używana przez <svelte:component> w App.svelte. */
-export const VIEWS: Record<TabName, ComponentType> = {
-  dash:     DashboardView,
-  table:    WbsEditorView,
-  rank:     RankingView,
-  team:     TeamView,
-  gantt:    GanttView,
-  personal: PersonalPlanView,
-  wlreport: WorklogReportView,
-  orders:   OrdersView,
-  admin:    AdminView,
-  risk:     RisksView,
-  report:   ReportView,
-  chart:    TreeView,
-  wfall:    WaterfallView,
-  log:      ChangelogView
-};
+const viewCache = new Map<TabName, ComponentType>();
+
+export async function loadView(tab: TabName): Promise<ComponentType> {
+  const cached = viewCache.get(tab);
+  if (cached) return cached;
+
+  const mod = await VIEW_LOADERS[tab]();
+  viewCache.set(tab, mod.default);
+  return mod.default;
+}
