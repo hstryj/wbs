@@ -18,10 +18,20 @@
   let projectPickerBusy = false;
   let projectPickerInfo: string | null = null;
 
-  function openEdit() {
-    draft = normalizeProjectMeta($projectMeta, {
-      name: get(currentProject).name || ''
+  function projectMetaWithFallback() {
+    const current = get(currentProject);
+    const meta = get(projectMeta);
+    const cloudCurrent = cloudProjects.find((project) => project.id === current.id) ?? null;
+
+    return normalizeProjectMeta({
+      ...meta,
+      name: meta.name.trim() || current.name || cloudCurrent?.name || '',
+      client: meta.client.trim() || cloudCurrent?.client || ''
     });
+  }
+
+  function openEdit() {
+    draft = projectMetaWithFallback();
     draftSettings = { ...$projectSettings };
     projectPickerInfo = null;
     projectPickerId = get(currentProject).id || '';
@@ -43,8 +53,12 @@
     }
   }
   async function save() {
-    const nextMeta = normalizeProjectMeta(draft, {
-      name: get(currentProject).name || ''
+    const current = get(currentProject);
+    const cloudCurrent = cloudProjects.find((project) => project.id === current.id) ?? null;
+    const nextMeta = normalizeProjectMeta({
+      ...draft,
+      name: draft.name.trim() || current.name || cloudCurrent?.name || '',
+      client: draft.client.trim() || cloudCurrent?.client || ''
     });
     projectMeta.set(nextMeta);
     projectSettings.set({ ...draftSettings });
@@ -74,6 +88,9 @@
     }
     cloudProjects = res.data;
     projectPickerId = get(currentProject).id || res.data[0]?.id || '';
+    if (editing) {
+      draft = projectMetaWithFallback();
+    }
   }
 
   async function openSelectedProject() {
@@ -195,6 +212,42 @@
         </button>
       </div>
 
+      {#if $auth.configured}
+        <section class="project-modal-section">
+          <div class="project-modal-section-title">Cloud workspace</div>
+          <div class="project-switcher">
+            <div class="project-switcher-head">
+              <strong>Przełącz projekt bez ręcznego przepisywania danych</strong>
+              <small>Najpierw wybierz istniejący projekt z bazy, a dopiero potem ewentualnie popraw metadane.</small>
+            </div>
+            <label class="form-full">Istniejący projekt z bazy
+              <select bind:value={projectPickerId} disabled={projectPickerBusy || cloudProjects.length === 0}>
+                {#if cloudProjects.length === 0}
+                  <option value="">Brak innych projektów w chmurze</option>
+                {:else}
+                  {#each cloudProjects as project}
+                    <option value={project.id}>
+                      {project.name || 'Bez nazwy'}{project.client ? ` — ${project.client}` : ''}
+                    </option>
+                  {/each}
+                {/if}
+              </select>
+            </label>
+            <div class="project-switcher-actions">
+              <button class="btn project-switcher-btn" disabled={!projectPickerId || projectPickerBusy} on:click={openSelectedProject}>
+                {projectPickerBusy ? 'Ładowanie…' : projectPickerId === $currentProject.id ? 'Odśwież z bazy' : 'Otwórz wybrany projekt'}
+              </button>
+            </div>
+            <p class="project-switcher-note">
+              Tu otworzysz istniejący projekt widoczny dla Twojego konta i od razu przełączysz cały workspace na ten zapis z bazy.
+            </p>
+            {#if projectPickerInfo}
+              <p class="project-switcher-error">{projectPickerInfo}</p>
+            {/if}
+          </div>
+        </section>
+      {/if}
+
       <section class="project-modal-section">
         <div class="project-modal-section-title">Podstawowe dane</div>
         <div class="form-grid">
@@ -231,38 +284,6 @@
           </label>
         </div>
       </section>
-
-      {#if $auth.configured}
-        <section class="project-modal-section">
-          <div class="project-modal-section-title">Cloud workspace</div>
-          <div class="project-switcher">
-            <label class="form-full">Istniejący projekt z bazy
-              <select bind:value={projectPickerId} disabled={projectPickerBusy || cloudProjects.length === 0}>
-                {#if cloudProjects.length === 0}
-                  <option value="">Brak innych projektów w chmurze</option>
-                {:else}
-                  {#each cloudProjects as project}
-                    <option value={project.id}>
-                      {project.name || 'Bez nazwy'}{project.client ? ` — ${project.client}` : ''}
-                    </option>
-                  {/each}
-                {/if}
-              </select>
-            </label>
-            <div class="project-switcher-actions">
-              <button class="btn project-switcher-btn" disabled={!projectPickerId || projectPickerBusy} on:click={openSelectedProject}>
-                {projectPickerBusy ? 'Ładowanie…' : projectPickerId === $currentProject.id ? 'Odśwież z bazy' : 'Otwórz wybrany projekt'}
-              </button>
-            </div>
-            <p class="project-switcher-note">
-              Tu otworzysz istniejący projekt widoczny dla Twojego konta i od razu przełączysz cały workspace na ten zapis z bazy.
-            </p>
-            {#if projectPickerInfo}
-              <p class="project-switcher-error">{projectPickerInfo}</p>
-            {/if}
-          </div>
-        </section>
-      {/if}
 
       <section class="project-modal-section">
         <div class="project-modal-section-title">Ustawienia godzin pracy</div>
@@ -571,6 +592,24 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .project-switcher-head {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .project-switcher-head strong {
+    font-size: 14px;
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+
+  .project-switcher-head small {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
   }
 
   .project-switcher-actions {

@@ -40,6 +40,28 @@ function allStores(): Record<string, Writable<any>> {
 let stopFn: (() => void) | null = null;
 let flushFn: (() => Promise<{ error: string | null }>) | null = null;
 
+function normalizeCloudProjectMeta(
+  rawMeta: unknown,
+  project: { name: string; client: string | null }
+) {
+  const value =
+    typeof rawMeta === 'object' && rawMeta !== null
+      ? (rawMeta as Record<string, unknown>)
+      : null;
+
+  return normalizeProjectMeta({
+    ...(value || {}),
+    name:
+      typeof value?.name === 'string' && value.name.trim()
+        ? value.name
+        : project.name,
+    client:
+      typeof value?.client === 'string' && value.client.trim()
+        ? value.client
+        : (project.client || '')
+  });
+}
+
 /**
  * Załaduj payload z cloud'a do wszystkich store'ów. Nie startuje sync —
  * tylko hydrate. Po tym można wywołać startCloudSync() aby push'ować
@@ -54,35 +76,27 @@ export async function loadFromCloud(projectId: string): Promise<{ error: string 
     return { error: msg };
   }
   const payload = (res.data.payload || {}) as Record<string, any>;
+  const nextProjectMeta = normalizeCloudProjectMeta(payload.projectMeta, {
+    name: res.data.name,
+    client: res.data.client || ''
+  });
   const stores = allStores();
   for (const [key, store] of Object.entries(stores)) {
     if (payload[key] !== undefined) {
       if (key === 'projectMeta') {
-        store.set(normalizeProjectMeta(payload[key], {
-          name: res.data.name,
-          client: res.data.client || ''
-        }));
+        store.set(nextProjectMeta);
       } else {
         store.set(payload[key]);
       }
     }
   }
   if (payload.projectMeta === undefined) {
-    projectMeta.set(normalizeProjectMeta(null, {
-      name: res.data.name,
-      client: res.data.client || ''
-    }));
+    projectMeta.set(nextProjectMeta);
   }
-  const payloadProjectName =
-    typeof payload.projectMeta === 'object' &&
-    payload.projectMeta !== null &&
-    typeof (payload.projectMeta as Record<string, unknown>).name === 'string'
-      ? String((payload.projectMeta as Record<string, unknown>).name)
-      : '';
   currentProject.update((s) => ({
     ...s,
     id: projectId,
-    name: payloadProjectName || res.data!.name,
+    name: nextProjectMeta.name || res.data!.name,
     status: 'synced',
     lastSyncedAt: new Date()
   }));
