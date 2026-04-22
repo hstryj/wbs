@@ -220,7 +220,7 @@
       text-align: left;
       cursor: pointer;
       scroll-snap-align: start;
-      color: var(--text-primary);
+      color: #163a69;
       min-height: 90px;
     }
 
@@ -275,13 +275,13 @@
     .mobile-action-copy strong {
       font-size: 15px;
       line-height: 1.15;
-      color: inherit;
+      color: #163a69;
     }
 
     .mobile-action-copy small {
       font-size: 12px;
       line-height: 1.35;
-      color: var(--text-secondary);
+      color: #5f7390;
     }
 
     .mobile-action-card.primary .mobile-action-copy small {

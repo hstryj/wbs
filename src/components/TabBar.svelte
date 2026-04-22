@@ -149,6 +149,10 @@
   :global(.desktop-tabs .view-tab) {
     position: relative;
     isolation: isolate;
+    color: var(--tab-ink);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 8px 16px color-mix(in srgb, var(--tab-glow) 72%, transparent);
   }
 
   :global(.desktop-tabs .view-tab)::after {
@@ -167,6 +171,9 @@
     color: var(--tab-ink);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, var(--tab-tint) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.92),
+      0 12px 22px var(--tab-glow);
   }
 
   :global(.desktop-tabs .view-tab:hover)::after,
@@ -181,7 +188,7 @@
       linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, var(--tab-tint-strong) 100%);
     box-shadow:
       0 -1px 0 rgba(255, 255, 255, 0.7),
-      0 12px 20px var(--tab-glow);
+      0 16px 28px var(--tab-glow);
   }
 
   :global(.desktop-tabs .view-tab.admin-tab) {
@@ -191,11 +198,17 @@
   :global([data-theme='dark']) .desktop-tabs .view-tab:hover {
     background:
       linear-gradient(180deg, rgba(20, 33, 54, 0.96) 0%, var(--tab-tint) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 14px 24px var(--tab-glow);
   }
 
   :global([data-theme='dark']) .desktop-tabs .view-tab.active {
     background:
       linear-gradient(180deg, rgba(20, 33, 54, 0.98) 0%, var(--tab-tint-strong) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 16px 28px var(--tab-glow);
   }
 
   @media (max-width: 820px) {
@@ -292,7 +305,7 @@
       background:
         radial-gradient(circle at top right, rgba(255, 255, 255, 0.82), transparent 34%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, color-mix(in srgb, var(--tab-solid) 8%, #ffffff) 100%);
-      color: var(--text-primary);
+      color: var(--tab-ink);
       box-shadow: 0 12px 24px rgba(31, 56, 100, 0.08);
       scroll-snap-align: start;
       cursor: pointer;
@@ -342,11 +355,12 @@
       font-size: 15px;
       font-weight: 700;
       line-height: 1.15;
+      color: var(--tab-ink);
     }
 
     .mobile-nav-card-meta {
       font-size: 12px;
-      color: var(--text-secondary);
+      color: color-mix(in srgb, var(--tab-ink) 54%, #6d7f96);
     }
 
     .mobile-nav-scrim {
@@ -459,6 +473,7 @@
     .mobile-tab-menu-copy span {
       font-size: 14px;
       font-weight: 700;
+      color: var(--tab-ink);
     }
 
     .mobile-tab-menu-copy small {

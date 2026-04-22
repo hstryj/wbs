@@ -2,6 +2,7 @@
   import { auth } from '../lib/state/auth';
   import { currentProject } from '../lib/state/currentProject';
   import { projectMeta, normalizeProjectMeta } from '../lib/state/project';
+  import { flushCloudSync, loadFromCloud, startCloudSync, stopCloudSync } from '../lib/cloud/sync';
   import {
     attachProjectToOrganization,
     assignEmployeeToProject,
@@ -37,6 +38,7 @@
   let orgMembers: CloudOrganizationMember[] = [];
   let orgInvitations: CloudOrganizationInvitation[] = [];
   let employees: CloudEmployee[] = [];
+  let allProjectStaffing: CloudProjectStaffing[] = [];
   let staffing: CloudProjectStaffing[] = [];
 
   let selectedOrgId = '';
@@ -69,8 +71,14 @@
 
   let employeeFilter = '';
   let selectedEmployeeId = '';
+  let selectedManagedProjectId = '';
   let staffingRole = '';
   let staffingAllocation = 100;
+  let employeeProjectTargets: Record<string, string> = {};
+  let employeeAssignmentsMap = new Map<string, Array<{ row: CloudProjectStaffing; project: CloudProject | null }>>();
+  let currentOrgProject: CloudProject | null = null;
+  let selectedManagedProject: CloudProject | null = null;
+  let switchingWorkspace = false;
 
   let editingEmployeeId: string | null = null;
   let employeeDraftTitle = '';
@@ -136,6 +144,7 @@
       orgMembers = [];
       orgInvitations = [];
       employees = [];
+      allProjectStaffing = [];
       staffing = [];
       return true;
     }
@@ -166,8 +175,11 @@
     orgMembers = [];
     orgInvitations = [];
     employees = [];
+    allProjectStaffing = [];
     staffing = [];
     selectedOrgId = '';
+    selectedManagedProjectId = '';
+    employeeProjectTargets = {};
     schemaReady = true;
     inviteFeaturesReady = true;
     platformAdminReady = true;
@@ -185,6 +197,7 @@
   $: activeProjectCode = $projectMeta.code.trim();
   $: activeOrgRole = orgMembers.find((member) => member.user_id === $auth.user?.id)?.role ?? null;
   $: activeRoleLabel = activeOrgRole ? ROLE_LABEL[activeOrgRole] : null;
+  $: currentOrgProject = orgProjects.find((project) => project.id === activeProjectId) ?? null;
   $: canManageMembers = activeOrgRole === 'owner';
   $: canInviteMembers = activeOrgRole === 'owner' || activeOrgRole === 'admin';
   $: inviteRoleOptions = activeOrgRole === 'owner'
@@ -197,11 +210,14 @@
   $: if (selectedInviteEmployeeId && !inviteableEmployees.some((employee) => employee.id === selectedInviteEmployeeId)) {
     selectedInviteEmployeeId = '';
   }
+  $: if (!selectedManagedProjectId || !orgProjects.some((project) => project.id === selectedManagedProjectId)) {
+    selectedManagedProjectId = currentOrgProject?.id ?? orgProjects[0]?.id ?? '';
+  }
   $: if (editingProjectId && !orgProjects.some((project) => project.id === editingProjectId)) {
     cancelProjectEdit();
   }
-  $: currentOrgProject = orgProjects.find((project) => project.id === activeProjectId) ?? null;
   $: currentProjectAttached = Boolean(currentOrgProject);
+  $: selectedManagedProject = orgProjects.find((project) => project.id === selectedManagedProjectId) ?? null;
   $: filteredEmployees = employees.filter((employee) => {
     const q = employeeFilter.trim().toLowerCase();
     if (!q) return true;
@@ -217,6 +233,36 @@
     ...row,
     employee: employees.find((employee) => employee.id === row.employee_id) ?? null
   }));
+  $: staffing = selectedManagedProjectId
+    ? allProjectStaffing.filter((row) => row.project_id === selectedManagedProjectId)
+    : [];
+  $: employeeAssignmentsMap = allProjectStaffing.reduce((map, row) => {
+    const group = map.get(row.employee_id) || [];
+    group.push({
+      row,
+      project: orgProjects.find((project) => project.id === row.project_id) ?? null
+    });
+    map.set(row.employee_id, group);
+    return map;
+  }, new Map<string, Array<{ row: CloudProjectStaffing; project: CloudProject | null }>>());
+  $: if (orgProjects.length > 0 && employees.length > 0) {
+    const fallbackProjectId = selectedManagedProjectId || orgProjects[0]?.id || '';
+    const nextTargets = { ...employeeProjectTargets };
+    let changed = false;
+    for (const employee of employees) {
+      const currentTarget = nextTargets[employee.id];
+      if (!currentTarget || !orgProjects.some((project) => project.id === currentTarget)) {
+        nextTargets[employee.id] = fallbackProjectId;
+        changed = true;
+      }
+    }
+    if (changed) {
+      employeeProjectTargets = nextTargets;
+    }
+  }
+  $: if (selectedEmployeeId && !employees.some((employee) => employee.id === selectedEmployeeId)) {
+    selectedEmployeeId = '';
+  }
   $: if (!selectedEmployeeId && employees.length > 0) {
     selectedEmployeeId = employees.find((employee) => employee.active)?.id ?? employees[0].id;
   }
@@ -231,10 +277,6 @@
         resetData();
       }
     }
-  }
-
-  $: if (activeProjectId && selectedOrgId && lastUserId) {
-    void refreshStaffingOnly();
   }
 
   async function refreshAll(preferredOrgId = selectedOrgId) {
@@ -280,7 +322,10 @@
       orgMembers = [];
       orgInvitations = [];
       employees = [];
+      allProjectStaffing = [];
       staffing = [];
+      selectedManagedProjectId = '';
+      employeeProjectTargets = {};
     }
 
     loading = false;
@@ -306,8 +351,8 @@
     orgProjects = projectsRes.data;
     orgMembers = membersRes.data;
     employees = employeesRes.data;
+    await refreshAllProjectStaffing(projectsRes.data);
     await refreshInvitationsOnly(orgId);
-    await refreshStaffingOnly();
   }
 
   async function refreshInvitationsOnly(orgId = selectedOrgId) {
@@ -328,20 +373,23 @@
     orgInvitations = invitesRes.data;
   }
 
-  async function refreshStaffingOnly() {
-    if (!selectedOrgId || !activeProjectId || !orgProjects.some((project) => project.id === activeProjectId)) {
+  async function refreshAllProjectStaffing(projects = orgProjects) {
+    if (!projects.length) {
+      allProjectStaffing = [];
       staffing = [];
       return;
     }
 
-    const staffingRes = await listProjectStaffing(activeProjectId);
-    if (staffingRes.error) {
-      if (!handleLoadError(staffingRes.error.message, staffingRes.error.code)) {
-        error = staffingRes.error.message;
+    const staffingResults = await Promise.all(projects.map((project) => listProjectStaffing(project.id)));
+    const firstError = staffingResults.find((result) => result.error)?.error;
+    if (firstError) {
+      if (!handleLoadError(firstError.message, firstError.code)) {
+        error = firstError.message;
       }
       return;
     }
-    staffing = staffingRes.data;
+
+    allProjectStaffing = staffingResults.flatMap((result) => result.data);
   }
 
   async function onCreateOrganization() {
@@ -415,6 +463,45 @@
 
     await refreshAll(selectedOrgId);
     notice = 'Aktywny projekt został podpięty do organizacji.';
+  }
+
+  async function openProjectInWorkspace(projectId: string) {
+    clearFeedback();
+    if (!projectId) return;
+    if (projectId === activeProjectId) {
+      selectedManagedProjectId = projectId;
+      notice = 'Ten projekt jest już otwarty w workspace.';
+      return;
+    }
+
+    const previousId = activeProjectId;
+    switchingWorkspace = true;
+
+    const flushRes = await flushCloudSync();
+    if (flushRes.error) {
+      switchingWorkspace = false;
+      error = flushRes.error;
+      return;
+    }
+
+    stopCloudSync();
+    const loadRes = await loadFromCloud(projectId);
+    if (loadRes.error) {
+      if (previousId) startCloudSync(previousId);
+      switchingWorkspace = false;
+      error = loadRes.error;
+      return;
+    }
+
+    startCloudSync(projectId);
+    selectedManagedProjectId = projectId;
+    switchingWorkspace = false;
+    notice = `Workspace przełączony na projekt ${projectLabel(projectId)}.`;
+  }
+
+  function selectManagedProject(projectId: string) {
+    selectedManagedProjectId = projectId;
+    clearFeedback();
   }
 
   function startProjectEdit(project: CloudProject) {
@@ -611,12 +698,8 @@
 
   async function onAssignEmployee() {
     clearFeedback();
-    if (!selectedOrgId || !activeProjectId) {
-      error = 'Brak aktywnego projektu.';
-      return;
-    }
-    if (!currentProjectAttached) {
-      error = 'Najpierw podepnij aktywny projekt do wybranej organizacji.';
+    if (!selectedOrgId || !selectedManagedProjectId) {
+      error = 'Wybierz projekt do zarządzania.';
       return;
     }
     if (!selectedEmployeeId) {
@@ -627,7 +710,7 @@
     saving = true;
     const res = await assignEmployeeToProject({
       organizationId: selectedOrgId,
-      projectId: activeProjectId,
+      projectId: selectedManagedProjectId,
       employeeId: selectedEmployeeId,
       staffingRole: staffingRole.trim() || null,
       allocationPct: Number(staffingAllocation) || 100
@@ -640,22 +723,59 @@
 
     staffingRole = '';
     staffingAllocation = 100;
-    await refreshStaffingOnly();
-    notice = 'Pracownik został przypisany do aktywnego projektu.';
+    await refreshAllProjectStaffing();
+    notice = `Pracownik został przypisany do projektu ${projectLabel(selectedManagedProjectId)}.`;
   }
 
-  async function onRemoveStaffing(employeeId: string) {
-    if (!activeProjectId) return;
+  async function onRemoveStaffing(employeeId: string, projectId = selectedManagedProjectId) {
+    if (!projectId) return;
     clearFeedback();
     saving = true;
-    const res = await removeEmployeeFromProject(activeProjectId, employeeId);
+    const res = await removeEmployeeFromProject(projectId, employeeId);
     saving = false;
     if (res.error) {
       error = res.error.message;
       return;
     }
-    await refreshStaffingOnly();
-    notice = 'Przypisanie zostało usunięte.';
+    await refreshAllProjectStaffing();
+    notice = `Przypisanie zostało usunięte z projektu ${projectLabel(projectId)}.`;
+  }
+
+  function handleEmployeeProjectTarget(employeeId: string, event: Event) {
+    employeeProjectTargets = {
+      ...employeeProjectTargets,
+      [employeeId]: (event.currentTarget as HTMLSelectElement).value
+    };
+  }
+
+  async function onAssignEmployeeFromList(employee: CloudEmployee) {
+    clearFeedback();
+    const targetProjectId = employeeProjectTargets[employee.id] || selectedManagedProjectId;
+    if (!selectedOrgId || !targetProjectId) {
+      error = 'Wybierz projekt, do którego chcesz przypisać pracownika.';
+      return;
+    }
+    if (allProjectStaffing.some((row) => row.project_id === targetProjectId && row.employee_id === employee.id)) {
+      notice = `${employee.full_name} jest już przypisany do projektu ${projectLabel(targetProjectId)}.`;
+      return;
+    }
+
+    saving = true;
+    const res = await assignEmployeeToProject({
+      organizationId: selectedOrgId,
+      projectId: targetProjectId,
+      employeeId: employee.id,
+      staffingRole: employee.title || null,
+      allocationPct: 100
+    });
+    saving = false;
+    if (res.error) {
+      error = res.error.message;
+      return;
+    }
+
+    await refreshAllProjectStaffing();
+    notice = `${employee.full_name} został przypisany do projektu ${projectLabel(targetProjectId)}.`;
   }
 
   async function onChangeMemberRole(userId: string, role: OrganizationRole) {
@@ -687,7 +807,30 @@
   }
 
   function projectBadge(project: CloudProject): string {
-    return project.id === activeProjectId ? 'Aktywny teraz' : 'Projekt organizacji';
+    if (project.id === selectedManagedProjectId) return 'Wybrany w panelu';
+    if (project.id === activeProjectId) return 'Otwarty w workspace';
+    return 'Projekt organizacji';
+  }
+
+  function projectLabel(projectId: string): string {
+    return orgProjects.find((project) => project.id === projectId)?.name || 'wybranego projektu';
+  }
+
+  function projectAssignments(projectId: string): Array<{ row: CloudProjectStaffing; employee: CloudEmployee | null }> {
+    return allProjectStaffing
+      .filter((row) => row.project_id === projectId)
+      .map((row) => ({
+        row,
+        employee: employees.find((employee) => employee.id === row.employee_id) ?? null
+      }));
+  }
+
+  function employeeAssignments(employeeId: string): Array<{ row: CloudProjectStaffing; project: CloudProject | null }> {
+    return employeeAssignmentsMap.get(employeeId) || [];
+  }
+
+  function assignmentCount(projectId: string): number {
+    return allProjectStaffing.filter((row) => row.project_id === projectId).length;
   }
 
   function invitationStatusLabel(invitation: CloudOrganizationInvitation): string {
@@ -713,7 +856,7 @@
       <div class="admin-hero-copy">
         <span class="admin-eyebrow">Panel administracyjny</span>
         <strong>Firma, projekty i obsada w jednym miejscu</strong>
-        <p>Tu budujemy warstwę dla kadr i koordynacji: lista projektów, katalog pracowników i przypisania do aktywnego projektu bez ręcznego wpisywania ludzi w środku WBS.</p>
+        <p>Tu budujemy warstwę dla kadr i koordynacji: lista projektów, katalog pracowników i przypisania między wieloma projektami bez ręcznego wpisywania ludzi w środku WBS.</p>
       </div>
 
       <div class="admin-hero-rail">
@@ -734,8 +877,8 @@
         </article>
         <article class="admin-kpi">
           <span>Obsada</span>
-          <strong>{staffing.length}</strong>
-          <small>w aktywnym projekcie</small>
+          <strong>{allProjectStaffing.length}</strong>
+          <small>łącznych przypisań</small>
         </article>
       </div>
     </section>
@@ -927,7 +1070,7 @@
                     <span>{employees.filter((employee) => employee.active).length} aktywnych pracowników • {orgMembers.length} członków organizacji</span>
                   </div>
                   <div class="admin-chip-stack">
-                    <span class="admin-chip admin-chip-muted">{staffing.length} przypisań do aktywnego projektu</span>
+                    <span class="admin-chip admin-chip-muted">{allProjectStaffing.length} przypisań w całej organizacji</span>
                   </div>
                 </article>
               </div>
@@ -943,7 +1086,7 @@
           <article class="admin-card">
             <div class="admin-card-head">
               <div>
-                <span>Aktywny projekt</span>
+                <span>Workspace projektu</span>
                 <strong>{activeProjectName}</strong>
               </div>
               <div class="admin-chip-stack">
@@ -955,8 +1098,8 @@
             </div>
 
             <div class="admin-active-project">
-              <p>Najpierw podepnij bieżący projekt do wybranej organizacji, a potem dodawaj kolejne projekty firmowe i przypisuj do nich ludzi z katalogu.</p>
-              <button class="admin-primary-btn" type="button" disabled={!selectedOrgId || !activeProjectId || currentProjectAttached || saving} on:click={onAttachCurrentProject}>
+              <p>Tu podepniesz bieżący workspace do organizacji, dodasz nowe projekty firmowe i przełączysz się między nimi bez wychodzenia z panelu zarządzania.</p>
+              <button class="admin-primary-btn" type="button" disabled={!selectedOrgId || !activeProjectId || currentProjectAttached || saving || switchingWorkspace} on:click={onAttachCurrentProject}>
                 {currentProjectAttached ? 'Projekt jest już w tej organizacji' : 'Podepnij aktywny projekt do organizacji'}
               </button>
             </div>
@@ -983,9 +1126,15 @@
           <article class="admin-card">
             <div class="admin-card-head">
               <div>
-                <span>Projekty organizacji</span>
-                <strong>{activeOrganization ? activeOrganization.name : 'Brak wybranej organizacji'}</strong>
+                <span>Przegląd projektów</span>
+                <strong>{selectedManagedProject ? selectedManagedProject.name : activeOrganization ? activeOrganization.name : 'Brak wybranej organizacji'}</strong>
               </div>
+              {#if selectedManagedProject}
+                <div class="admin-chip-stack">
+                  <span class="admin-chip">{assignmentCount(selectedManagedProject.id)} przypisań</span>
+                  <span class="admin-chip admin-chip-muted">{projectBadge(selectedManagedProject)}</span>
+                </div>
+              {/if}
             </div>
 
             {#if !selectedOrgId}
@@ -993,9 +1142,55 @@
             {:else if orgProjects.length === 0}
               <div class="admin-empty-inline">Ta organizacja nie ma jeszcze żadnych projektów.</div>
             {:else}
+              <div class="admin-project-switch">
+                <label class="admin-select-wrap">
+                  <span>Zarządzany projekt</span>
+                  <select bind:value={selectedManagedProjectId}>
+                    {#each orgProjects as project}
+                      <option value={project.id}>{project.name}</option>
+                    {/each}
+                  </select>
+                </label>
+
+                {#if selectedManagedProject}
+                  <div class="admin-project-preview">
+                    <div class="admin-project-preview-head">
+                      <div>
+                        <strong>{selectedManagedProject.name}</strong>
+                        <p>{selectedManagedProject.client || 'Bez przypisanego klienta'}</p>
+                      </div>
+                      <div class="admin-chip-stack">
+                        <span class="admin-chip">{assignmentCount(selectedManagedProject.id)} osób / przypisań</span>
+                        <button
+                          class="admin-ghost-btn admin-compact-btn"
+                          type="button"
+                          on:click={() => openProjectInWorkspace(selectedManagedProject.id)}
+                          disabled={saving || switchingWorkspace}
+                        >
+                          {selectedManagedProject.id === activeProjectId ? 'Otwarty w workspace' : switchingWorkspace ? 'Przełączanie…' : 'Otwórz w workspace'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {#if projectAssignments(selectedManagedProject.id).length === 0}
+                      <div class="admin-empty-inline admin-empty-inline-compact">Ten projekt nie ma jeszcze przypisanych pracowników.</div>
+                    {:else}
+                      <div class="admin-assignment-chip-list">
+                        {#each projectAssignments(selectedManagedProject.id) as assignment}
+                          <span class="admin-assignment-chip">
+                            {assignment.employee?.full_name || 'Nieznany pracownik'}
+                          </span>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+
               <div class="admin-list">
                 {#each orgProjects as project}
-                  <article class:admin-list-card-stack={editingProjectId === project.id} class="admin-list-card" data-active={project.id === activeProjectId ? '1' : '0'}>
+                  {@const assignments = projectAssignments(project.id)}
+                  <article class:admin-list-card-stack={editingProjectId === project.id} class="admin-list-card" data-active={project.id === selectedManagedProjectId ? '1' : '0'}>
                     <div class="admin-project-card-head">
                       <div>
                         <strong>{project.name}</strong>
@@ -1006,6 +1201,19 @@
                         <span class="admin-chip admin-chip-muted">{new Date(project.updated_at).toLocaleDateString('pl-PL')}</span>
                       </div>
                     </div>
+
+                    <div class="admin-project-preview-meta">
+                      <span>{assignments.length} przypisań w projekcie</span>
+                      <span>{project.id === activeProjectId ? 'Ten projekt jest teraz otwarty w workspace.' : 'Możesz nim zarządzać niezależnie od aktywnego workspace.'}</span>
+                    </div>
+
+                    {#if assignments.length > 0}
+                      <div class="admin-assignment-chip-list">
+                        {#each assignments as assignment}
+                          <span class="admin-assignment-chip">{assignment.employee?.full_name || 'Nieznany pracownik'}</span>
+                        {/each}
+                      </div>
+                    {/if}
 
                     {#if editingProjectId === project.id}
                       <div class="admin-inline-form">
@@ -1026,6 +1234,10 @@
                       </div>
                     {:else}
                       <div class="admin-inline-actions">
+                        <button class="admin-ghost-btn" type="button" on:click={() => selectManagedProject(project.id)}>Zarządzaj</button>
+                        <button class="admin-ghost-btn" type="button" on:click={() => openProjectInWorkspace(project.id)} disabled={saving || switchingWorkspace}>
+                          {project.id === activeProjectId ? 'Otwarty w workspace' : 'Otwórz w workspace'}
+                        </button>
                         <button class="admin-ghost-btn" type="button" on:click={() => startProjectEdit(project)} disabled={saving}>Edytuj</button>
                       </div>
                     {/if}
@@ -1040,16 +1252,27 @@
           <article class="admin-card">
             <div class="admin-card-head">
               <div>
-                <span>Obsada aktywnego projektu</span>
-                <strong>{activeProjectName}</strong>
+                <span>Obsada wybranego projektu</span>
+                <strong>{selectedManagedProject?.name || 'Najpierw wybierz projekt do zarządzania'}</strong>
               </div>
               <div class="admin-chip-stack">
-                <span class="admin-chip">{currentProjectAttached ? 'Gotowy do staffingu' : 'Najpierw podepnij projekt'}</span>
+                <span class="admin-chip">{selectedManagedProject ? 'Gotowy do staffingu' : 'Wybierz projekt z listy'}</span>
               </div>
             </div>
 
             <form class="admin-form" on:submit|preventDefault={onAssignEmployee}>
               <div class="admin-form-grid admin-form-grid-3">
+                <label>
+                  <span>Projekt</span>
+                  <select bind:value={selectedManagedProjectId} disabled={orgProjects.length === 0}>
+                    {#if orgProjects.length === 0}
+                      <option value="">Brak projektów</option>
+                    {/if}
+                    {#each orgProjects as project}
+                      <option value={project.id}>{project.name}</option>
+                    {/each}
+                  </select>
+                </label>
                 <label>
                   <span>Pracownik</span>
                   <select bind:value={selectedEmployeeId} disabled={employees.length === 0}>
@@ -1067,13 +1290,15 @@
                   <input bind:value={staffingAllocation} type="number" min="0" max="100" />
                 </label>
               </div>
-              <button class="admin-primary-btn" type="submit" disabled={!currentProjectAttached || employees.length === 0 || saving}>
-                Przypisz pracownika do aktywnego projektu
+              <button class="admin-primary-btn" type="submit" disabled={!selectedManagedProjectId || employees.length === 0 || saving}>
+                Przypisz pracownika do wybranego projektu
               </button>
             </form>
 
-            {#if staffingRows.length === 0}
-              <div class="admin-empty-inline">Brak przypisań dla aktywnego projektu w tej organizacji.</div>
+            {#if !selectedManagedProject}
+              <div class="admin-empty-inline">Wybierz projekt z listy powyżej, żeby zobaczyć i edytować jego obsadę.</div>
+            {:else if staffingRows.length === 0}
+              <div class="admin-empty-inline">Brak przypisań dla wybranego projektu w tej organizacji.</div>
             {:else}
               <div class="admin-list">
                 {#each staffingRows as row}
@@ -1082,7 +1307,7 @@
                       <strong>{row.employee?.full_name || 'Nieznany pracownik'}</strong>
                       <span>{row.staffing_role || row.employee?.title || 'Bez roli w projekcie'} • {Number(row.allocation_pct).toFixed(0)}%</span>
                     </div>
-                    <button class="admin-danger-btn" type="button" on:click={() => onRemoveStaffing(row.employee_id)} disabled={saving}>Usuń</button>
+                    <button class="admin-danger-btn" type="button" on:click={() => onRemoveStaffing(row.employee_id, row.project_id)} disabled={saving}>Usuń</button>
                   </article>
                 {/each}
               </div>
@@ -1200,6 +1425,57 @@
                         <button class="admin-danger-btn" type="button" on:click={() => onRemoveEmployee(employee.id)} disabled={saving}>Usuń</button>
                       </div>
                     {/if}
+
+                    <div class="admin-employee-projects">
+                      <div class="admin-employee-project-assignment">
+                        <label class="admin-select-wrap">
+                          <span>Przypisz do projektu</span>
+                          <select
+                            value={employeeProjectTargets[employee.id] || ''}
+                            on:change={(event) => handleEmployeeProjectTarget(employee.id, event)}
+                            disabled={orgProjects.length === 0}
+                          >
+                            {#if orgProjects.length === 0}
+                              <option value="">Brak projektów organizacji</option>
+                            {/if}
+                            {#each orgProjects as project}
+                              <option value={project.id}>{project.name}</option>
+                            {/each}
+                          </select>
+                        </label>
+                        <button
+                          class="admin-ghost-btn admin-compact-btn"
+                          type="button"
+                          on:click={() => onAssignEmployeeFromList(employee)}
+                          disabled={orgProjects.length === 0 || saving}
+                        >
+                          Przypisz
+                        </button>
+                      </div>
+
+                      {#if employeeAssignments(employee.id).length === 0}
+                        <div class="admin-empty-inline admin-empty-inline-compact">Ten pracownik nie jest jeszcze przypisany do żadnego projektu.</div>
+                      {:else}
+                        <div class="admin-assignment-list">
+                          {#each employeeAssignments(employee.id) as assignment}
+                            <article class="admin-assignment-row">
+                              <div>
+                                <strong>{assignment.project?.name || 'Nieznany projekt'}</strong>
+                                <span>{assignment.row.staffing_role || employee.title || 'Bez roli w projekcie'} • {Number(assignment.row.allocation_pct).toFixed(0)}%</span>
+                              </div>
+                              <button
+                                class="admin-danger-btn admin-compact-btn"
+                                type="button"
+                                on:click={() => onRemoveStaffing(employee.id, assignment.row.project_id)}
+                                disabled={saving}
+                              >
+                                Usuń z projektu
+                              </button>
+                            </article>
+                          {/each}
+                        </div>
+                      {/if}
+                    </div>
                   </article>
                 {/each}
               </div>
@@ -1719,6 +1995,79 @@
     color: var(--admin-body-text);
   }
 
+  .admin-project-switch,
+  .admin-employee-projects,
+  .admin-assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-project-preview,
+  .admin-assignment-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 22px;
+    background: var(--admin-soft-bg);
+    border: 1px solid var(--admin-card-border);
+  }
+
+  .admin-project-preview-head,
+  .admin-employee-project-assignment {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .admin-project-preview strong,
+  .admin-assignment-row strong {
+    font-size: 18px;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    color: var(--admin-strong-text);
+  }
+
+  .admin-project-preview p,
+  .admin-project-preview-meta span,
+  .admin-assignment-row span {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--admin-body-text);
+  }
+
+  .admin-project-preview-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .admin-assignment-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-assignment-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--admin-chip-bg);
+    color: var(--admin-chip-text);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .admin-empty-inline-compact {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
   .admin-form,
   .admin-inline-form {
     display: flex;
@@ -1858,6 +2207,12 @@
 
   :global([data-theme='dark']) .admin-danger-btn {
     color: #ffc4bc;
+  }
+
+  .admin-compact-btn {
+    min-height: 40px;
+    padding: 0 13px;
+    border-radius: 14px;
   }
 
   .admin-chip-stack,
@@ -2038,7 +2393,10 @@
     .admin-card-head,
     .admin-form-head,
     .admin-active-project,
-    .admin-employee-head {
+    .admin-employee-head,
+    .admin-project-preview-head,
+    .admin-employee-project-assignment,
+    .admin-assignment-row {
       flex-direction: column;
       align-items: stretch;
     }
